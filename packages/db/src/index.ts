@@ -11,11 +11,12 @@ const conn =
   globalForDb.conn ?? postgres(process.env.DATABASE_URL!, { prepare: false });
 if (process.env.NODE_ENV !== "production") globalForDb.conn = conn;
 
-export const db = drizzle(conn, { schema, casing: "snake_case" });
+export const db = drizzle(conn, { schema });
 
 export {
   eq,
   and,
+  asc,
   desc,
   or,
   not,
@@ -28,8 +29,10 @@ export {
   sql,
   count,
   sum,
+  avg,
   gte,
   lte,
   gt,
   lt,
+  between,
 } from "drizzle-orm";
