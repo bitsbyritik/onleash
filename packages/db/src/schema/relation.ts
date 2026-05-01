@@ -12,6 +12,7 @@ import {
   spendTracking,
   vendorSpend,
   notificationLogs,
+  auditLog,
 } from "./schema";
 
 export const teamRelations = relations(teams, ({ many }) => ({
@@ -20,10 +21,12 @@ export const teamRelations = relations(teams, ({ many }) => ({
   agentWallets: many(agentWallets),
   notificationChannels: many(notificationChannels),
   transfers: many(transfers),
+  auditLog: many(auditLog),
 }));
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   team: one(teams, { fields: [users.teamId], references: [teams.id] }),
+  auditLog: many(auditLog),
 }));
 
 export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
@@ -33,11 +36,15 @@ export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
 export const agentWalletsRelations = relations(
   agentWallets,
   ({ one, many }) => ({
-    team: one(teams, { fields: [agentWallets.teamId], references: [teams.id] }),
+    team: one(teams, {
+      fields: [agentWallets.teamId],
+      references: [teams.id],
+    }),
     policies: many(policies),
     transfers: many(transfers),
     spendTracking: many(spendTracking),
     vendorSpend: many(vendorSpend),
+    policyViolations: many(policyViolations),
   }),
 );
 
@@ -60,7 +67,7 @@ export const policiesRelations = relations(policies, ({ one, many }) => ({
   transfers: many(transfers),
 }));
 
-export const transfersRelations = relations(transfers, ({ one }) => ({
+export const transfersRelations = relations(transfers, ({ one, many }) => ({
   wallet: one(agentWallets, {
     fields: [transfers.walletId],
     references: [agentWallets.id],
@@ -70,14 +77,12 @@ export const transfersRelations = relations(transfers, ({ one }) => ({
     fields: [transfers.policyId],
     references: [policies.id],
   }),
-  violation: one(policyViolations, {
-    fields: [transfers.id],
-    references: [policyViolations.transferId],
-  }),
+  violations: many(policyViolations),
   approval: one(approvals, {
     fields: [transfers.id],
     references: [approvals.transferId],
   }),
+  notificationLogs: many(notificationLogs),
 }));
 
 export const policyViolationsRelations = relations(
@@ -86,6 +91,10 @@ export const policyViolationsRelations = relations(
     transfer: one(transfers, {
       fields: [policyViolations.transferId],
       references: [transfers.id],
+    }),
+    wallet: one(agentWallets, {
+      fields: [policyViolations.walletId],
+      references: [agentWallets.id],
     }),
   }),
 );
@@ -119,9 +128,18 @@ export const notificationLogsRelations = relations(
       fields: [notificationLogs.approvalId],
       references: [approvals.id],
     }),
+    transfer: one(transfers, {
+      fields: [notificationLogs.transferId],
+      references: [transfers.id],
+    }),
     channel: one(notificationChannels, {
       fields: [notificationLogs.channelId],
       references: [notificationChannels.id],
     }),
   }),
 );
+
+export const auditLogRelations = relations(auditLog, ({ one }) => ({
+  team: one(teams, { fields: [auditLog.teamId], references: [teams.id] }),
+  actor: one(users, { fields: [auditLog.actorId], references: [users.id] }),
+}));
