@@ -1,30 +1,59 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-}
-
-* {
+*, *::before, *::after {
   box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-void: #080a0f;
+  --bg-base: #0d1117;
+  --bg-surface: #161b22;
+  --bg-elevated: #1c2128;
+  --bg-border: rgba(255, 255, 255, 0.07);
+  --accent: #00ff88;
+  --accent-dim: rgba(0, 255, 136, 0.12);
+  --accent-glow: 0 0 24px rgba(0, 255, 136, 0.3);
+  --blue: #38bdf8;
+  --gold: #e8c46a;
+  --success: #00ff88;
+  --blocked: #ff4444;
+  --pending: #f59e0b;
+  --expired: #4b5563;
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
+  --text-tertiary: #3d444d;
+  --text-accent: #00ff88;
+  --font-display: var(--font-bebas-neue, 'Bebas Neue', sans-serif);
+  --font-ui: var(--font-dm-mono, 'DM Mono', monospace);
+  --font-prose: var(--font-instrument-serif, 'Instrument Serif', serif);
+  --font-code: var(--font-fira-code, 'Fira Code', monospace);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
 }
 
 a {
@@ -32,19 +61,9 @@ a {
   text-decoration: none;
 }
 
-.imgDark {
-  display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-
-  .imgLight {
-    display: none;
-  }
-  .imgDark {
-    display: unset;
-  }
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: var(--font-ui);
 }
