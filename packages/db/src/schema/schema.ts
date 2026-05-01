@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -349,7 +350,7 @@ export const spendTracking = pgTable(
       .references(() => agentWallets.id, { onDelete: "cascade" })
       .notNull(),
     date: date("date").notNull(),
-    totalSpent: bigint("total_spent", { mode: "bigint" }).default(0n).notNull(),
+    totalSpent: bigint("total_spent", { mode: "bigint" }).default(sql`0`).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -370,7 +371,7 @@ export const vendorSpend = pgTable(
       .notNull(),
     toAddress: text("to_address").notNull(),
     date: date("date").notNull(),
-    totalSpent: bigint("total_spent", { mode: "bigint" }).default(0n).notNull(),
+    totalSpent: bigint("total_spent", { mode: "bigint" }).default(sql`0`).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
