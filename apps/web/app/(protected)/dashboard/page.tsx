@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import TransferTable from "@/app/components/dashboard/TransferTable";
-import { WALLETS, TRANSFERS } from "@/app/components/dashboard/data";
+import TransferTable from "@/components/dashboard/TransferTable";
+import { WALLETS, TRANSFERS } from "@/components/dashboard/data";
 
 function useCounter(target: number, duration = 1200) {
   const [value, setValue] = useState(0);

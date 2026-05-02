@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import TransferTable from "@/app/components/dashboard/TransferTable";
-import { TRANSFERS, type TransferStatus } from "@/app/components/dashboard/data";
+import TransferTable from "@/components/dashboard/TransferTable";
+import { TRANSFERS, type TransferStatus } from "@/components/dashboard/data";
 
 const FILTERS: { label: string; value: TransferStatus | "all" }[] = [
   { label: "ALL", value: "all" },

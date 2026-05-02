@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import Badge from "@/app/components/dashboard/Badge";
-import TransferTable from "@/app/components/dashboard/TransferTable";
-import SpendGauge from "@/app/components/dashboard/SpendGauge";
-import { WALLETS, TRANSFERS } from "@/app/components/dashboard/data";
+import Badge from "@/components/dashboard/Badge";
+import TransferTable from "@/components/dashboard/TransferTable";
+import SpendGauge from "@/components/dashboard/SpendGauge";
+import { WALLETS, TRANSFERS } from "@/components/dashboard/data";
 
 const BLOCKLIST = [
   "9xQ8f3...rT4mK",

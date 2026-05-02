@@ -98,3 +98,12 @@ button {
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* ── AUTH PAGES ──────────────────────────────────────────────── */
+.auth-page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+}

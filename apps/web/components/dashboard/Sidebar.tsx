@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Logo } from "@/app/components/Logo";
+import { Logo } from "@/components/Logo";
 
 const NAV = [
   { href: "/dashboard",           label: "Overview",   icon: (

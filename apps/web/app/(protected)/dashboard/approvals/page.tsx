@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import CountdownTimer from "@/app/components/dashboard/CountdownTimer";
-import Badge from "@/app/components/dashboard/Badge";
-import { APPROVALS } from "@/app/components/dashboard/data";
+import CountdownTimer from "@/components/dashboard/CountdownTimer";
+import Badge from "@/components/dashboard/Badge";
+import { APPROVALS } from "@/components/dashboard/data";
 
 export default function ApprovalsPage() {
   const [resolved, setResolved] = useState<Record<string, "approved" | "rejected">>({});

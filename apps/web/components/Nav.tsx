@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Logo } from "./Logo";
+import { UserButton, Show } from "@clerk/nextjs";
 
 const LINKS = [
   { label: "Docs", href: "#" },
@@ -38,8 +39,14 @@ export function Nav() {
               ))}
             </div>
             <div className="nav-right">
-              <a href="#" className="nav-link nav-link-sign">Sign in</a>
-              <button className="nav-cta">GET STARTED</button>
+              <Show when="signed-out">
+                <a href="/sign-in" className="nav-link nav-link-sign">Sign in</a>
+                <a href="/sign-up" className="nav-cta">GET STARTED</a>
+              </Show>
+              <Show when="signed-in">
+                <a href="/dashboard" className="nav-link nav-link-sign">Dashboard</a>
+                <UserButton />
+              </Show>
               <button
                 className={`hamburger${menuOpen ? " open" : ""}`}
                 onClick={() => setMenuOpen((o) => !o)}
@@ -60,9 +67,15 @@ export function Nav() {
               {l.label}
             </a>
           ))}
-          <button className="nav-cta" style={{ fontSize: 16, padding: "14px 32px" }} onClick={() => setMenuOpen(false)}>
-            GET STARTED
-          </button>
+          <Show when="signed-out">
+            <a href="/sign-in" className="nav-link nav-link-sign" style={{ fontSize: 16 }}>Sign in</a>
+            <a href="/sign-up" className="nav-cta" style={{ fontSize: 16, padding: "14px 32px" }}>GET STARTED</a>
+          </Show>
+          <Show when="signed-in">
+            <a href="/dashboard" className="nav-cta" style={{ fontSize: 16, padding: "14px 32px", display: "inline-block", textAlign: "center" }}>
+              DASHBOARD
+            </a>
+          </Show>
         </div>
       )}
     </>
