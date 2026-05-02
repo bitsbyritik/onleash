@@ -23,16 +23,11 @@ export default function TransferTable({ rows }: { rows: Transfer[] }) {
               <span className="td-amount">{t.usd}</span>{" "}
               <span style={{ color: "var(--text-tertiary)", fontSize: 10 }}>{t.token}</span>
             </td>
-            <td>
-              <Badge status={t.status} />
-            </td>
+            <td><Badge status={t.status} /></td>
             <td style={{ fontSize: 11, color: "var(--text-secondary)", letterSpacing: "0.02em" }}>
               {t.reason}
             </td>
-            <td
-              className="td-mono"
-              style={{ color: t.sig === "—" ? "var(--text-tertiary)" : "var(--blue)" }}
-            >
+            <td className="td-mono" style={{ color: t.sig === "—" ? "var(--text-tertiary)" : "var(--blue)" }}>
               {t.sig}
             </td>
           </tr>

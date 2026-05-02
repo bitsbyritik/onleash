@@ -7,6 +7,7 @@ import { Demo } from "./components/Demo";
 import { Pricing } from "./components/Pricing";
 import { QuoteSection } from "./components/QuoteSection";
 import { Footer } from "./components/Footer";
+import { ScrollAnimations } from "./components/ScrollAnimations";
 import "./landing.css";
 
 function Divider() {
@@ -16,6 +17,7 @@ function Divider() {
 export default function Home() {
   return (
     <>
+      <ScrollAnimations />
       <Nav />
       <Hero />
       <Divider />

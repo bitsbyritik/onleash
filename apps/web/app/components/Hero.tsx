@@ -24,7 +24,7 @@ const CODE_LINES = [
 
 function Terminal() {
   return (
-    <div className="terminal">
+    <div className="terminal terminal-3d">
       <div className="terminal-bar">
         <div className="term-dots">
           <div className="term-dot" style={{ background: "#ff5f57" }} />
@@ -59,22 +59,29 @@ function Terminal() {
 export function Hero() {
   return (
     <section className="hero">
-      <div className="container">
+      <div className="hero-grid" />
+      <div className="hero-orb hero-orb-1" />
+      <div className="hero-orb hero-orb-2" />
+      <div className="hero-scan-line" />
+      <div className="container" style={{ position: "relative", zIndex: 1 }}>
         <div className="hero-inner">
           <div>
-            <div className="eyebrow">SOLANA · AGENT · INFRASTRUCTURE</div>
-            <h1>
-              <div>YOUR AGENT</div>
-              <div className="accent-text">HAS A WALLET.</div>
-              <div>NOTHING IS</div>
-              <div>STOPPING IT.</div>
+            <div className="eyebrow hero-eyebrow">
+              <span className="eyebrow-dot" />
+              SOLANA · AGENT · INFRASTRUCTURE
+            </div>
+            <h1 className="hero-h1">
+              <div className="h1-line">YOUR AGENT</div>
+              <div className="h1-line accent-text">HAS A WALLET.</div>
+              <div className="h1-line">NOTHING IS</div>
+              <div className="h1-line">STOPPING IT.</div>
             </h1>
             <p className="hero-sub">
               OnLeash wraps any Solana wallet with programmable spend controls.
               Daily caps. Blocklists. Human approval flows. Backed onchain.
             </p>
             <div className="cta-row">
-              <button className="btn-primary">GET STARTED FREE</button>
+              <button className="btn-primary btn-glow">GET STARTED FREE</button>
               <button className="btn-ghost">VIEW DOCS →</button>
             </div>
             <div className="trust-signals">

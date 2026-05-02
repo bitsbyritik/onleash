@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import CountdownTimer from "../_components/CountdownTimer";
-import Badge from "../_components/Badge";
-import { APPROVALS } from "../_components/data";
+import CountdownTimer from "@/app/components/dashboard/CountdownTimer";
+import Badge from "@/app/components/dashboard/Badge";
+import { APPROVALS } from "@/app/components/dashboard/data";
 
 export default function ApprovalsPage() {
   const [resolved, setResolved] = useState<Record<string, "approved" | "rejected">>({});
@@ -23,59 +23,61 @@ export default function ApprovalsPage() {
         </div>
       </div>
 
-      {pending.length === 0 && (
-        <div className="panel">
-          <div className="empty">ALL CAUGHT UP — NO PENDING APPROVALS</div>
-        </div>
-      )}
-
-      {pending.map((a) => (
-        <div className="approval-card" key={a.id}>
-          <div className="approval-header">
-            <div className="approval-wallet">{a.wallet}</div>
-            <CountdownTimer initSeconds={a.expires} />
+      <div className="approvals-list">
+        {pending.length === 0 && (
+          <div className="panel">
+            <div className="empty">ALL CAUGHT UP — NO PENDING APPROVALS</div>
           </div>
-          <div className="approval-body">
-            <div className="approval-field">
-              <div className="approval-label">TO</div>
-              <div className="td-mono">{a.to}</div>
+        )}
+
+        {pending.map((a) => (
+          <div className="approval-card" key={a.id}>
+            <div className="approval-header">
+              <div className="approval-wallet">{a.wallet}</div>
+              <CountdownTimer initSeconds={a.expires} />
             </div>
-            <div className="approval-field">
-              <div className="approval-label">AMOUNT</div>
-              <div className="approval-amount">
-                {a.amount} <span style={{ color: "var(--text-tertiary)", fontSize: 12 }}>{a.token}</span>
+            <div className="approval-body">
+              <div className="approval-field">
+                <div className="approval-label">TO</div>
+                <div className="td-mono">{a.to}</div>
+              </div>
+              <div className="approval-field">
+                <div className="approval-label">AMOUNT</div>
+                <div className="approval-amount">
+                  {a.amount} <span style={{ color: "var(--text-tertiary)", fontSize: 12 }}>{a.token}</span>
+                </div>
+              </div>
+              <div className="approval-field">
+                <div className="approval-label">MEMO</div>
+                <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{a.memo}</div>
+              </div>
+              <div className="approval-field">
+                <div className="approval-label">REASON FLAGGED</div>
+                <div style={{ fontSize: 12, color: "var(--pending)" }}>{a.reason}</div>
               </div>
             </div>
-            <div className="approval-field">
-              <div className="approval-label">MEMO</div>
-              <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{a.memo}</div>
-            </div>
-            <div className="approval-field">
-              <div className="approval-label">REASON FLAGGED</div>
-              <div style={{ fontSize: 12, color: "var(--pending)" }}>{a.reason}</div>
-            </div>
-          </div>
-          <div className="approval-footer">
-            <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-              Requested {a.created}
-            </div>
-            <div className="approval-actions">
-              <button
-                className="btn-sm btn-danger"
-                onClick={() => resolve(a.id, "rejected")}
-              >
-                REJECT
-              </button>
-              <button
-                className="btn-sm btn-accent"
-                onClick={() => resolve(a.id, "approved")}
-              >
-                APPROVE
-              </button>
+            <div className="approval-footer">
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+                Requested {a.created}
+              </div>
+              <div className="approval-actions">
+                <button
+                  className="btn-sm btn-danger"
+                  onClick={() => resolve(a.id, "rejected")}
+                >
+                  REJECT
+                </button>
+                <button
+                  className="btn-sm btn-accent"
+                  onClick={() => resolve(a.id, "approved")}
+                >
+                  APPROVE
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       {done.length > 0 && (
         <div className="panel" style={{ marginTop: 24 }}>

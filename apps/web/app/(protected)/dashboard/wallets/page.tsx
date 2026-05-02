@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Badge from "../_components/Badge";
-import { WALLETS } from "../_components/data";
+import Badge from "@/app/components/dashboard/Badge";
+import { WALLETS } from "@/app/components/dashboard/data";
 
 export default function WalletsPage() {
   return (

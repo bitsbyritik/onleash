@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 
-function useCounter(target: number, duration = 800, start = false) {
+function useCounter(target: number, duration = 900, start = false) {
   const [value, setValue] = useState(0);
   useEffect(() => {
     if (!start) return;
@@ -18,18 +18,24 @@ function useCounter(target: number, duration = 800, start = false) {
   return value;
 }
 
+const STATS = [
+  { target: 35,   suffix: "%",  label: "of new Solana devs",    sub: "building agentic products" },
+  { target: 2000, suffix: "+",  label: "developers",             sub: "in Solana Agent Kit ecosystem" },
+  { target: 100,  suffix: "ms", label: "avg policy check",       sub: "zero extra latency" },
+];
+
 export function QuoteSection() {
   const ref = useRef<HTMLElement>(null);
   const [visible, setVisible] = useState(false);
-  const n1 = useCounter(35, 1000, visible);
-  const n2 = useCounter(2000, 1000, visible);
+  const n0 = useCounter(STATS[0]!.target, 900, visible);
+  const n1 = useCounter(STATS[1]!.target, 1100, visible);
+  const n2 = useCounter(STATS[2]!.target, 700, visible);
+  const values = [n0, n1, n2];
 
   useEffect(() => {
     const obs = new IntersectionObserver(
-      ([e]) => {
-        if (e?.isIntersecting) setVisible(true);
-      },
-      { threshold: 0.3 }
+      ([e]) => { if (e?.isIntersecting) setVisible(true); },
+      { threshold: 0.25 }
     );
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
@@ -38,26 +44,37 @@ export function QuoteSection() {
   return (
     <section className="quote-section" ref={ref}>
       <div className="container">
-        <div className="quote-inner">
-          <div className="quote-mark">&ldquo;</div>
-          <blockquote className="quote-text">
-            You don&apos;t want to give a credit card to an agent without a lot of control.
-          </blockquote>
-          <div className="quote-attr">— Privy × Stripe Panel, DAS NYC 2026</div>
-          <div className="stats-row">
-            <div className="stat-block">
-              <div className="stat-num">{n1}%</div>
-              <div className="stat-label">of incoming Solana devs</div>
-              <div className="stat-sub">are building agentic products</div>
-            </div>
-            <div className="stat-divider" />
-            <div className="stat-block">
-              <div className="stat-num">{n2.toLocaleString()}+</div>
-              <div className="stat-label">developers</div>
-              <div className="stat-sub">already in Solana Agent Kit ecosystem</div>
+
+        <div className="quote-card reveal">
+          <div className="quote-card-bg" />
+          <div className="quote-card-inner">
+            <div className="quote-glyph">&ldquo;</div>
+            <blockquote className="quote-text">
+              You don&apos;t want to give a credit card to an agent
+              without a <em>lot</em> of control.
+            </blockquote>
+            <div className="quote-attr-row">
+              <div className="quote-attr-avatar">P×S</div>
+              <div>
+                <div className="quote-attr-name">Privy × Stripe Panel</div>
+                <div className="quote-attr-event">DAS New York, 2026</div>
+              </div>
             </div>
           </div>
         </div>
+
+        <div className="stats-grid reveal">
+          {STATS.map((s, i) => (
+            <div key={s.label} className="stat-card">
+              <div className="stat-num">
+                {values[i]!.toLocaleString()}{s.suffix}
+              </div>
+              <div className="stat-label">{s.label}</div>
+              <div className="stat-sub">{s.sub}</div>
+            </div>
+          ))}
+        </div>
+
       </div>
     </section>
   );

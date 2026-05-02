@@ -1,6 +1,6 @@
 import "./dashboard.css";
-import Sidebar from "./_components/Sidebar";
-import Topbar from "./_components/Topbar";
+import Sidebar from "@/app/components/dashboard/Sidebar";
+import Topbar from "@/app/components/dashboard/Topbar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (

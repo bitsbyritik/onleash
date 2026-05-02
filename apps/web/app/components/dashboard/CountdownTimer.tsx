@@ -10,14 +10,11 @@ export default function CountdownTimer({ initSeconds }: { initSeconds: number })
     return () => clearInterval(t);
   }, []);
 
-  const m = Math.floor(s / 60);
+  const m   = Math.floor(s / 60);
   const sec = s % 60;
 
   return (
-    <span
-      className="ap-timer"
-      style={{ color: s < 60 ? "var(--blocked)" : "var(--pending)" }}
-    >
+    <span className="ap-timer" style={{ color: s < 60 ? "var(--blocked)" : "var(--pending)" }}>
       {m}:{String(sec).padStart(2, "0")}
     </span>
   );

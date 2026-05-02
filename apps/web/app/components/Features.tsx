@@ -72,12 +72,12 @@ export function Features() {
   return (
     <section className="features" id="features">
       <div className="container">
-        <div className="section-eyebrow">FEATURES</div>
-        <div className="section-head">
+        <div className="section-eyebrow reveal">FEATURES</div>
+        <div className="section-head reveal">
           <div>EVERY CONTROL</div>
           <div>YOUR AGENT NEEDS</div>
         </div>
-        <div className="features-grid">
+        <div className="features-grid reveal">
           {FEATURES.map((f) => (
             <div key={f.title} className="feature-cell">
               <div className="feat-icon">{f.icon}</div>

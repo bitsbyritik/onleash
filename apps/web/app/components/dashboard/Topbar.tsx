@@ -13,28 +13,21 @@ const TITLES: Record<string, string> = {
 
 export default function Topbar() {
   const pathname = usePathname();
-
   const isWalletDetail = pathname.startsWith("/dashboard/wallets/");
-  const title = isWalletDetail
-    ? null
-    : (TITLES[pathname] ?? "DASHBOARD");
+  const title = isWalletDetail ? null : (TITLES[pathname] ?? "DASHBOARD");
 
   return (
     <div className="topbar">
       <div className="topbar-title">
         {isWalletDetail ? (
-          <span style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: "var(--font-ui)", fontSize: 14 }}>
+          <span className="topbar-breadcrumb">
             <Link href="/dashboard/wallets">
-              <span style={{ color: "var(--text-tertiary)", cursor: "pointer" }}>WALLETS</span>
+              <span className="bc-parent">WALLETS</span>
             </Link>
-            <span style={{ color: "var(--text-tertiary)" }}> /</span>
-            <span style={{ color: "var(--text-primary)" }}>
-              {pathname.split("/").pop()}
-            </span>
+            <span className="bc-sep">/</span>
+            <span className="bc-current">{pathname.split("/").pop()}</span>
           </span>
-        ) : (
-          title
-        )}
+        ) : title}
       </div>
       <div className="topbar-right">
         <div className="topbar-network">
