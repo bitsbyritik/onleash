@@ -91,9 +91,9 @@ function PricingCard({ plan }: { plan: typeof PLANS[number] }) {
           </li>
         ))}
       </ul>
-      <button className={plan.featured ? "btn-primary btn-full" : "btn-ghost btn-full"}>
+      <a href="/sign-up" className={plan.featured ? "btn-primary btn-full" : "btn-ghost btn-full"}>
         GET STARTED
-      </button>
+      </a>
     </div>
   );
 }

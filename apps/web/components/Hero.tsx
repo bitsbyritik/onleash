@@ -81,7 +81,7 @@ export function Hero() {
               Daily caps. Blocklists. Human approval flows. Backed onchain.
             </p>
             <div className="cta-row">
-              <button className="btn-primary btn-glow">GET STARTED FREE</button>
+              <a href="/sign-up" className="btn-primary btn-glow">GET STARTED FREE</a>
               <button className="btn-ghost">VIEW DOCS →</button>
             </div>
             <div className="trust-signals">

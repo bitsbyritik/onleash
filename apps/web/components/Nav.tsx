@@ -39,15 +39,18 @@ export function Nav() {
               ))}
             </div>
             <div className="nav-right">
-              <Show when="signed-out">
-                <a href="/sign-in" className="nav-link nav-link-sign">Sign in</a>
-                <a href="/sign-up" className="nav-cta">GET STARTED</a>
-              </Show>
-              <Show when="signed-in">
-                <a href="/dashboard" className="nav-link nav-link-sign">Dashboard</a>
-                <UserButton />
-              </Show>
+              <div className="nav-auth">
+                <Show when="signed-out">
+                  <a href="/sign-in" className="nav-link nav-link-sign">Sign in</a>
+                  <a href="/sign-up" className="nav-cta">GET STARTED</a>
+                </Show>
+                <Show when="signed-in">
+                  <a href="/dashboard" className="nav-link nav-link-sign">Dashboard</a>
+                  <UserButton />
+                </Show>
+              </div>
               <button
+                type="button"
                 className={`hamburger${menuOpen ? " open" : ""}`}
                 onClick={() => setMenuOpen((o) => !o)}
                 aria-label="Toggle menu"
@@ -61,21 +64,31 @@ export function Nav() {
       </nav>
 
       {menuOpen && (
-        <div className="mobile-menu" onClick={() => setMenuOpen(false)}>
-          {LINKS.map((l) => (
-            <a key={l.label} href={l.href} className="nav-link" onClick={() => setMenuOpen(false)}>
-              {l.label}
+        <div className="mobile-menu">
+          <button
+            className="mobile-menu-close"
+            onClick={() => setMenuOpen(false)}
+            aria-label="Close menu"
+          >
+            <span /><span />
+          </button>
+
+          <div className="mobile-menu-links">
+            {LINKS.map((l) => (
+              <a key={l.label} href={l.href} className="mobile-link" onClick={() => setMenuOpen(false)}>
+                {l.label}
+              </a>
+            ))}
+          </div>
+
+          <div className="mobile-menu-cta">
+            <a href="/sign-up" className="mobile-cta-btn" onClick={() => setMenuOpen(false)}>
+              GET STARTED
             </a>
-          ))}
-          <Show when="signed-out">
-            <a href="/sign-in" className="nav-link nav-link-sign" style={{ fontSize: 16 }}>Sign in</a>
-            <a href="/sign-up" className="nav-cta" style={{ fontSize: 16, padding: "14px 32px" }}>GET STARTED</a>
-          </Show>
-          <Show when="signed-in">
-            <a href="/dashboard" className="nav-cta" style={{ fontSize: 16, padding: "14px 32px", display: "inline-block", textAlign: "center" }}>
-              DASHBOARD
+            <a href="/sign-in" className="mobile-sign-btn" onClick={() => setMenuOpen(false)}>
+              Sign in
             </a>
-          </Show>
+          </div>
         </div>
       )}
     </>
