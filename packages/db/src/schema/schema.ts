@@ -132,14 +132,32 @@ export const users = pgTable("users", {
   teamId: uuid("team_id")
     .references(() => teams.id, { onDelete: "cascade" })
     .notNull(),
-  clerkId: text("clerk_id").unique().notNull(),
-  email: text("email").notNull(),
+  walletAddress: text("wallet_address").unique().notNull(),
+  email: text("email"),
   name: text("name"),
   role: userRoleEnum("role").default("member").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
 });
+
+export const authNonces = pgTable(
+  "auth_nonces",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    nonce: text("nonce").unique().notNull(),
+    walletAddress: text("wallet_address").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [
+    index("auth_nonce_wallet_idx").on(t.walletAddress),
+    index("auth_nonce_expires_idx").on(t.expiresAt),
+  ],
+);
 
 export const apiKeys = pgTable(
   "api_keys",
@@ -309,10 +327,7 @@ export const policyViolations = pgTable(
   },
   (t) => [
     uniqueIndex("policy_violation_transfer_rule_idx").on(t.transferId, t.rule),
-    index("policy_violation_wallet_created_at_idx").on(
-      t.walletId,
-      t.createdAt,
-    ),
+    index("policy_violation_wallet_created_at_idx").on(t.walletId, t.createdAt),
   ],
 );
 
@@ -350,7 +365,9 @@ export const spendTracking = pgTable(
       .references(() => agentWallets.id, { onDelete: "cascade" })
       .notNull(),
     date: date("date").notNull(),
-    totalSpent: bigint("total_spent", { mode: "bigint" }).default(sql`0`).notNull(),
+    totalSpent: bigint("total_spent", { mode: "bigint" })
+      .default(sql`0`)
+      .notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -371,7 +388,9 @@ export const vendorSpend = pgTable(
       .notNull(),
     toAddress: text("to_address").notNull(),
     date: date("date").notNull(),
-    totalSpent: bigint("total_spent", { mode: "bigint" }).default(sql`0`).notNull(),
+    totalSpent: bigint("total_spent", { mode: "bigint" })
+      .default(sql`0`)
+      .notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
