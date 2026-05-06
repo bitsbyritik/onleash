@@ -9,6 +9,12 @@ use anchor_lang::prelude::*;
 pub struct ApproveTransfer<'info> {
     #[account(
         mut,
+        seeds = [
+            b"approval",
+            approval.policy.as_ref(),
+            &approval.seed_timestamp.to_le_bytes(),
+        ],
+        bump = approval.bump,
         constraint = approval.policy == policy.key() @ OnLeashError::ApprovalPolicyMismatch,
     )]
     pub approval: Account<'info, ApprovalAccount>,

@@ -79,4 +79,16 @@ pub enum OnLeashError {
 
     #[msg("Parent per-vendor cap exceeded")]
     ParentVendorCapExceeded,
+
+    #[msg("Parent policy is required but not provided")]
+    MissingParentPolicy,
+
+    #[msg("Unexpected parent policy provided (policy has no parent)")]
+    UnexpectedParentPolicy,
+
+    #[msg("Provided parent policy does not match the expected policy PDA")]
+    ParentPolicyMismatch,
+
+    #[msg("Invalid parent policy PDA")]
+    InvalidParentPDA,
 }

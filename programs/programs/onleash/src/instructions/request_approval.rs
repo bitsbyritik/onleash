@@ -40,7 +40,7 @@ pub fn request_approval(
     amount: u64,
     recipient: Pubkey,
     expires_at: i64,
-    _timestamp: i64, // used only for seed uniqueness, not validation
+    _timestamp: i64,
 ) -> Result<()> {
     let approval = &mut ctx.accounts.approval;
     let clock = Clock::get()?;
@@ -63,6 +63,7 @@ pub fn request_approval(
     approval.status = ApprovalStatus::Pending;
     approval.created_at = clock.unix_timestamp;
     approval.expires_at = expires_at;
+    approval.seed_timestamp = _timestamp;
     approval.bump = ctx.bumps.approval;
 
     emit!(ApprovalRequested {

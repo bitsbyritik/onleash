@@ -30,6 +30,7 @@ pub struct ApprovalAccount {
     pub status: ApprovalStatus,
     pub created_at: i64,
     pub expires_at: i64,
+    pub seed_timestamp: i64,
     pub bump: u8,
 }
 
@@ -64,6 +65,7 @@ impl ApprovalAccount {
         + 1                                 // status (enum)
         + 8                                 // created_at
         + 8                                 // expires_at
+        + 8                                 // seed_timestamp
         + 1 // bump
     }
 }
