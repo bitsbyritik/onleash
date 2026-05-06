@@ -53,4 +53,30 @@ pub enum OnLeashError {
     #[msg("Child per-vendor cap cannot exceed parent per-vendor cap")]
     ChildPerVendorCapExceedsParent,
 
+    #[msg("Amount is below approval threshold")]
+    BelowApprovalThreshold,
+
+    #[msg("Approval is not in pending status")]
+    ApprovalNotPending,
+
+    #[msg("Approval has not been granted")]
+    ApprovalNotGranted,
+
+    #[msg("Approval has expired")]
+    ApprovalExpired,
+
+    #[msg("Approval policy does not match")]
+    ApprovalPolicyMismatch,
+
+    #[msg("Invalid expiry timestamp")]
+    InvalidExpiry,
+
+    #[msg("Address is on the parent policy blocklist")]
+    ParentBlocklistedAddress,
+
+    #[msg("Address is not on the parent policy allowlist")]
+    ParentAddressNotAllowlisted,
+
+    #[msg("Parent per-vendor cap exceeded")]
+    ParentVendorCapExceeded,
 }

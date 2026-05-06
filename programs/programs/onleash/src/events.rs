@@ -40,3 +40,27 @@ pub struct DailySpendReset {
     pub policy: Pubkey,
     pub reset_at: i64,
 }
+
+#[event]
+pub struct ApprovalRequested {
+    pub approval: Pubkey,
+    pub policy: Pubkey,
+    pub amount: u64,
+    pub recipient: Pubkey,
+    pub expires_at: i64,
+}
+
+#[event]
+pub struct ApprovalGranted {
+    pub approval: Pubkey,
+    pub policy: Pubkey,
+}
+
+#[event]
+pub struct ApprovedTransferExecuted {
+    pub approval: Pubkey,
+    pub policy: Pubkey,
+    pub recipient: Pubkey,
+    pub amount: u64,
+    pub spent_today: u64,
+}

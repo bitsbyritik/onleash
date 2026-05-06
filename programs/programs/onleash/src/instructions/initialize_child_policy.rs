@@ -1,10 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{
-    errors::OnLeashError,
-    events::ChildPolicyInitialized,
-    state::{PolicyAccount},
-};
+use crate::{errors::OnLeashError, events::ChildPolicyInitialized, state::PolicyAccount};
 
 #[derive(Accounts)]
 #[instruction(params: InitializeChildPolicyParams)]
@@ -52,6 +48,10 @@ pub fn initialize_child_policy(
     require!(
         params.daily_cap <= parent.daily_cap,
         OnLeashError::ChildCapExceedsParent
+    );
+    require!(
+        params.per_vendor_cap <= parent.per_vendor_cap,
+        OnLeashError::ChildPerVendorCapExceedsParent
     );
     require!(params.daily_cap > 0, OnLeashError::InvalidCap);
     require!(params.per_vendor_cap > 0, OnLeashError::InvalidCap);

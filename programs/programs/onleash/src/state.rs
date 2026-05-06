@@ -21,6 +21,18 @@ pub struct PolicyAccount {
     pub bump: u8,
 }
 
+#[account]
+pub struct ApprovalAccount {
+    pub policy: Pubkey,
+    pub agent_wallet: Pubkey,
+    pub amount: u64,
+    pub recipient: Pubkey,
+    pub status: ApprovalStatus,
+    pub created_at: i64,
+    pub expires_at: i64,
+    pub bump: u8,
+}
+
 impl PolicyAccount {
     pub fn space() -> usize {
         8                                    // discriminator
@@ -42,8 +54,31 @@ impl PolicyAccount {
     }
 }
 
+impl ApprovalAccount {
+    pub fn space() -> usize {
+        8                                   // discriminator
+        + 32                                // policy
+        + 32                                // agent_wallet
+        + 8                                 // amount
+        + 32                                // recipient
+        + 1                                 // status (enum)
+        + 8                                 // created_at
+        + 8                                 // expires_at
+        + 1 // bump
+    }
+}
+
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct VendorEntry {
     pub address: Pubkey,
     pub amount: u64,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
+pub enum ApprovalStatus {
+    Pending,
+    Approved,
+    Rejected,
+    Expired,
+    Used,
 }
