@@ -1,10 +1,5 @@
+use crate::{constants::*, errors::OnLeashError, events::PolicyInitialized, state::PolicyAccount};
 use anchor_lang::prelude::*;
-use crate::{
-    constants::*,
-    errors::OnLeashError,
-    events::PolicyInitialized,
-    state::{PolicyAccount},
-};
 
 #[derive(Accounts)]
 #[instruction(params: InitializePolicyParams)]
@@ -41,6 +36,10 @@ pub fn initialize_policy(
     let policy = &mut ctx.accounts.policy;
     let clock = Clock::get()?;
 
+    require!(
+        params.parent_policy.is_none(),
+        OnLeashError::UnexpectedParentPolicy
+    );
     require!(params.daily_cap > 0, OnLeashError::InvalidCap);
     require!(params.per_vendor_cap > 0, OnLeashError::InvalidCap);
     require!(params.approval_threshold > 0, OnLeashError::InvalidCap);

@@ -51,7 +51,10 @@ pub fn update_policy(ctx: Context<UpdatePolicy>, params: UpdatePolicyParams) -> 
     policy.blocklist = params.blocklist;
     policy.allowlist = params.allowlist;
     policy.allowlist_mode = params.allowlist_mode;
-    policy.version += 1;
+    policy.version = policy
+        .version
+        .checked_add(1)
+        .ok_or(OnLeashError::Overflow)?;
 
     emit!(PolicyUpdated {
         policy: policy.key(),

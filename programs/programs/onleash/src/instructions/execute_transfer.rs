@@ -29,18 +29,8 @@ pub fn execute_transfer(
     let clock = Clock::get()?;
     require!(amount > 0, OnLeashError::ZeroAmount);
 
-    match (
-        ctx.accounts.policy.parent_policy,
-        &ctx.accounts.parent_policy,
-    ) {
+    match (ctx.accounts.policy.parent_policy, ctx.accounts.parent_policy.as_ref()) {
         (Some(expected), Some(parent)) => {
-            // Verify parent account PDA
-            let (expected_pda, bump) = Pubkey::find_program_address(
-                &[b"policy", parent.agent_wallet.as_ref()],
-                &crate::id(),
-            );
-            require_keys_eq!(parent.key(), expected_pda, OnLeashError::InvalidParentPDA);
-            require_eq!(parent.bump, bump, OnLeashError::InvalidParentPDA);
             require_keys_eq!(parent.key(), expected, OnLeashError::ParentPolicyMismatch);
             require!(parent.is_active, OnLeashError::PolicyInactive);
         }

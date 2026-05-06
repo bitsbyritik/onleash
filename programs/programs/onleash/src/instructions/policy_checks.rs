@@ -117,16 +117,13 @@ pub fn enforce_policy_and_update_spend(
         {
             entry.amount = parent_vendor_proj;
         } else {
-            require!(
-                parent.vendor_entries.len() < MAX_VENDOR_ENTRIES,
-                OnLeashError::TooManyVendors
-            );
-            if parent.vendor_entries.len() < MAX_VENDOR_ENTRIES {
-                parent.vendor_entries.push(VendorEntry {
-                    address: *recipient,
-                    amount,
-                });
+            if parent.vendor_entries.len() >= MAX_VENDOR_ENTRIES {
+                return err!(OnLeashError::TooManyVendors);
             }
+            parent.vendor_entries.push(VendorEntry {
+                address: *recipient,
+                amount,
+            });
         }
     }
 

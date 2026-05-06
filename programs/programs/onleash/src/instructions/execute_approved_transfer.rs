@@ -18,6 +18,7 @@ pub struct ExecuteApprovedTransfer<'info> {
             bump = approval.bump,
             constraint = approval.agent_wallet == agent.key() @ OnLeashError::Unauthorized,
             constraint = approval.status == ApprovalStatus::Approved @ OnLeashError::ApprovalNotGranted,
+            constraint = approval.policy == policy.key() @ OnLeashError::ApprovalPolicyMismatch,
         )]
     pub approval: Account<'info, ApprovalAccount>,
 
@@ -47,18 +48,8 @@ pub fn execute_approved_transfer(ctx: Context<ExecuteApprovedTransfer>) -> Resul
         OnLeashError::ApprovalExpired
     );
 
-    match (
-        ctx.accounts.policy.parent_policy,
-        &ctx.accounts.parent_policy,
-    ) {
+    match (ctx.accounts.policy.parent_policy, ctx.accounts.parent_policy.as_ref()) {
         (Some(expected), Some(parent)) => {
-            // Verify parent account PDA
-            let (expected_pda, bump) = Pubkey::find_program_address(
-                &[b"policy", parent.agent_wallet.as_ref()],
-                &crate::id(),
-            );
-            require_keys_eq!(parent.key(), expected_pda, OnLeashError::InvalidParentPDA);
-            require_eq!(parent.bump, bump, OnLeashError::InvalidParentPDA);
             require_keys_eq!(parent.key(), expected, OnLeashError::ParentPolicyMismatch);
             require!(parent.is_active, OnLeashError::PolicyInactive);
         }
