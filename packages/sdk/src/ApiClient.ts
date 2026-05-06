@@ -47,6 +47,22 @@ export class ApiClient {
     return res.json() as Promise<T>;
   }
 
+  async createChildWallet(params: {
+    name: string;
+    parentWalletId: string;
+    dailyCap: string;
+    perVendorCap: string;
+    approvalThreshold: string;
+  }): Promise<{ walletId: string }> {
+    return this.request<{ walletId: string }>(
+      `/api/sdk/wallets/${this.walletId}/children`,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+      },
+    );
+  }
+
   async getWallet(): Promise<ApiWalletResponse> {
     return this.request<ApiWalletResponse>(`/api/sdk/wallets/${this.walletId}`);
   }
@@ -59,6 +75,7 @@ export class ApiClient {
   }
 
   async submitVerification(params: {
+    challenge: string;
     signature: string;
     publicKey: string;
   }): Promise<void> {
