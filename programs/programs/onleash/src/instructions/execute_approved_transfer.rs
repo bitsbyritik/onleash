@@ -19,6 +19,7 @@ pub struct ExecuteApprovedTransfer<'info> {
             constraint = approval.agent_wallet == agent.key() @ OnLeashError::Unauthorized,
             constraint = approval.status == ApprovalStatus::Approved @ OnLeashError::ApprovalNotGranted,
             constraint = approval.policy == policy.key() @ OnLeashError::ApprovalPolicyMismatch,
+            close = agent,
         )]
     pub approval: Account<'info, ApprovalAccount>,
 

@@ -28,6 +28,10 @@ pub fn execute_transfer(
 ) -> Result<()> {
     let clock = Clock::get()?;
     require!(amount > 0, OnLeashError::ZeroAmount);
+    require!(
+        amount < ctx.accounts.policy.approval_threshold,
+        OnLeashError::ApprovalRequired
+    );
 
     match (ctx.accounts.policy.parent_policy, ctx.accounts.parent_policy.as_ref()) {
         (Some(expected), Some(parent)) => {

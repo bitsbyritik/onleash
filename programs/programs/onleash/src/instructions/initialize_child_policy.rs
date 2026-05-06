@@ -55,6 +55,7 @@ pub fn initialize_child_policy(
     );
     require!(params.daily_cap > 0, OnLeashError::InvalidCap);
     require!(params.per_vendor_cap > 0, OnLeashError::InvalidCap);
+    require!(params.approval_threshold > 0, OnLeashError::InvalidCap);
     require!(
         params.per_vendor_cap <= params.daily_cap,
         OnLeashError::VendorCapExceedsDailyCap

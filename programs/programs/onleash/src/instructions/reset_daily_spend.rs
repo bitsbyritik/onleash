@@ -18,6 +18,7 @@ pub struct ResetDailySpend<'info> {
 pub fn reset_daily_spend(ctx: Context<ResetDailySpend>) -> Result<()> {
     let policy = &mut ctx.accounts.policy;
     let clock = Clock::get()?;
+    require!(policy.is_active, OnLeashError::PolicyInactive);
 
     policy.spent_today = 0;
     policy.vendor_entries = vec![];

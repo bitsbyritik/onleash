@@ -1,12 +1,12 @@
 use crate::{
     errors::OnLeashError,
-    events::ApprovalGranted,
+    events::ApprovalRejected,
     state::{ApprovalAccount, ApprovalStatus, PolicyAccount},
 };
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct ApproveTransfer<'info> {
+pub struct RejectApproval<'info> {
     #[account(
         mut,
         seeds = [
@@ -16,6 +16,7 @@ pub struct ApproveTransfer<'info> {
         ],
         bump = approval.bump,
         constraint = approval.policy == policy.key() @ OnLeashError::ApprovalPolicyMismatch,
+        close = agent,
     )]
     pub approval: Account<'info, ApprovalAccount>,
 
@@ -23,31 +24,26 @@ pub struct ApproveTransfer<'info> {
         seeds = [b"policy", policy.agent_wallet.as_ref()],
         bump = policy.bump,
         constraint = policy.owner == owner.key() @ OnLeashError::Unauthorized,
-        constraint = policy.is_active @ OnLeashError::PolicyInactive,
     )]
     pub policy: Account<'info, PolicyAccount>,
+
+    #[account(mut, address = approval.agent_wallet @ OnLeashError::Unauthorized)]
+    pub agent: SystemAccount<'info>,
 
     pub owner: Signer<'info>,
 }
 
-pub fn approve_transfer(ctx: Context<ApproveTransfer>) -> Result<()> {
-    let approval = &mut ctx.accounts.approval;
-    let clock = Clock::get()?;
-
+pub fn reject_approval(ctx: Context<RejectApproval>) -> Result<()> {
     require!(
-        approval.status == ApprovalStatus::Pending,
-        OnLeashError::ApprovalNotPending
-    );
-    require!(
-        clock.unix_timestamp < approval.expires_at,
-        OnLeashError::ApprovalExpired
+        ctx.accounts.approval.status == ApprovalStatus::Pending,
+        OnLeashError::ApprovalNotPending,
     );
 
-    approval.status = ApprovalStatus::Approved;
+    ctx.accounts.approval.status = ApprovalStatus::Rejected;
 
-    emit!(ApprovalGranted {
-        approval: approval.key(),
-        policy: ctx.accounts.policy.key(),
+    emit!(ApprovalRejected {
+        approval: ctx.accounts.approval.key(),
+        policy: ctx.accounts.approval.policy,
     });
 
     Ok(())

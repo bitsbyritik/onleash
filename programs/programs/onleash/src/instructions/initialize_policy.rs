@@ -26,7 +26,6 @@ pub struct InitializePolicyParams {
     pub blocklist: Vec<Pubkey>,
     pub allowlist: Vec<Pubkey>,
     pub allowlist_mode: bool,
-    pub parent_policy: Option<Pubkey>,
 }
 
 pub fn initialize_policy(
@@ -36,10 +35,6 @@ pub fn initialize_policy(
     let policy = &mut ctx.accounts.policy;
     let clock = Clock::get()?;
 
-    require!(
-        params.parent_policy.is_none(),
-        OnLeashError::UnexpectedParentPolicy
-    );
     require!(params.daily_cap > 0, OnLeashError::InvalidCap);
     require!(params.per_vendor_cap > 0, OnLeashError::InvalidCap);
     require!(params.approval_threshold > 0, OnLeashError::InvalidCap);
@@ -67,7 +62,7 @@ pub fn initialize_policy(
     policy.spent_today = 0;
     policy.vendor_entries = vec![];
     policy.last_reset = clock.unix_timestamp;
-    policy.parent_policy = params.parent_policy;
+    policy.parent_policy = None;
     policy.version = 1;
     policy.is_active = true;
     policy.bump = ctx.bumps.policy;

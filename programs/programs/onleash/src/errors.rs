@@ -91,4 +91,13 @@ pub enum OnLeashError {
 
     #[msg("Invalid parent policy PDA")]
     InvalidParentPDA,
+
+    #[msg("Approval has not yet expired")]
+    ApprovalNotExpired,
+
+    #[msg("Policy is already active")]
+    PolicyAlreadyActive,
+
+    #[msg("Policy must be deactivated before closing")]
+    PolicyStillActive,
 }

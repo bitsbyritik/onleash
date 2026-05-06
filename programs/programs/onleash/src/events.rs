@@ -64,3 +64,26 @@ pub struct ApprovedTransferExecuted {
     pub amount: u64,
     pub spent_today: u64,
 }
+
+#[event]
+pub struct ApprovalRejected {
+    pub approval: Pubkey,
+    pub policy: Pubkey,
+}
+
+#[event]
+pub struct ApprovalExpired {
+    pub approval: Pubkey,
+    pub policy: Pubkey,
+}
+
+#[event]
+pub struct PolicyReactivated {
+    pub policy: Pubkey,
+}
+
+#[event]
+pub struct PolicyClosed {
+    pub policy: Pubkey,
+    pub agent_wallet: Pubkey,
+}
