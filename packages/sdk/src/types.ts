@@ -43,6 +43,7 @@ export interface PolicyConfig {
   notificationChannelIds: string[];
   timezone: string;
   version: number;
+  parentPolicyPda?: string;
 }
 
 export type ViolationRule =
@@ -75,6 +76,7 @@ export type ApprovalStatus = "pending" | "approved" | "rejected" | "expired";
 export interface ApprovalResult {
   approvalId: string;
   status: ApprovalStatus;
+  approvalPda?: string;
 }
 
 export interface LeashWalletConfig {

@@ -1,5 +1,7 @@
+import { PublicKey } from "@solana/web3.js";
 import type { Keypair, Connection } from "@solana/web3.js";
 import { ApiClient } from "./ApiClient";
+import { AnchorClient } from "./AnchorClient";
 import { PolicyEngine } from "./PolicyEngine";
 import { SpendTracker } from "./SpendTracker";
 import { HitlManager } from "./HitlManager";
@@ -16,6 +18,7 @@ import type {
 
 export class LeashWallet {
   private readonly api: ApiClient;
+  private readonly anchor: AnchorClient;
   private readonly verifier: WalletVerifier;
   private readonly hitl: HitlManager;
   private readonly solana: SolanaClient;
@@ -32,6 +35,7 @@ export class LeashWallet {
       baseUrl: config.apibaseUrl,
     });
 
+    this.anchor = new AnchorClient(config.connection, config.keypair);
     this.verifier = new WalletVerifier(config.keypair, this.api);
     this.hitl = new HitlManager(this.api, config.timeoutMs);
     this.solana = new SolanaClient(
@@ -123,8 +127,19 @@ export class LeashWallet {
       });
 
       // ── HITL ───────────────────────────────────────────────────────────────
+      let anchorApprovalPda: PublicKey | null = null;
+      let approval: Awaited<ReturnType<typeof this.hitl.requestAndWait>> | null = null;
+
       if (check.needsApproval) {
-        const approval = await this.hitl.requestAndWait(transfer, transferId);
+        const expiresAt = BigInt(Math.floor(Date.now() / 1000) + 3600);
+        const { approvalPda } = await this.anchor.requestApproval(
+          new PublicKey(transfer.to),
+          transfer.amount,
+          expiresAt,
+        );
+        anchorApprovalPda = approvalPda;
+
+        approval = await this.hitl.requestAndWait(transfer, transferId);
 
         if (approval.status !== "approved") {
           await this.api.updateTransfer(transferId, { status: "rejected" });
@@ -140,9 +155,23 @@ export class LeashWallet {
 
       // ── EXECUTE ONCHAIN ────────────────────────────────────────────────────
       let signature: string;
+      const parentPolicyPubkey = policy.parentPolicyPda
+        ? new PublicKey(policy.parentPolicyPda)
+        : null;
 
       try {
-        signature = await this.solana.send(transfer);
+        if (anchorApprovalPda) {
+          signature = await this.anchor.executeApprovedTransfer(
+            anchorApprovalPda,
+            parentPolicyPubkey,
+          );
+        } else {
+          signature = await this.anchor.executeTransfer(
+            new PublicKey(transfer.to),
+            transfer.amount,
+            parentPolicyPubkey,
+          );
+        }
       } catch (err: any) {
         const rawTransaction = err.transaction
           ? Buffer.from(err.transaction.serialize()).toString("base64")
