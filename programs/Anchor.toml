@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-onleash = "71XPKUg1c8rHuKHZ9pmvfrPkREwXHPQKtndQyDJWWSDS"
+onleash = "6ufLBSxNADjAAS7NT5f9Phnvjxc2We7n7q8s9uKx5GBn"
 
 [provider]
 cluster = "localnet"

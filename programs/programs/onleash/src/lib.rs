@@ -34,7 +34,7 @@ pub(crate) use instructions::request_approval::__client_accounts_request_approva
 pub(crate) use instructions::reset_daily_spend::__client_accounts_reset_daily_spend;
 pub(crate) use instructions::update_policy::__client_accounts_update_policy;
 
-declare_id!("71XPKUg1c8rHuKHZ9pmvfrPkREwXHPQKtndQyDJWWSDS");
+declare_id!("6ufLBSxNADjAAS7NT5f9Phnvjxc2We7n7q8s9uKx5GBn");
 
 #[program]
 pub mod onleash {

@@ -28,12 +28,12 @@ pub fn expire_approval(ctx: Context<ExpireApproval>) -> Result<()> {
     let clock = Clock::get()?;
 
     require!(
-        approval.status == ApprovalStatus::Pending,
-        OnLeashError::ApprovalNotPending,
-    );
-    require!(
         clock.unix_timestamp >= approval.expires_at,
         OnLeashError::ApprovalNotExpired,
+    );
+    require!(
+        approval.status == ApprovalStatus::Pending || approval.status == ApprovalStatus::Approved,
+        OnLeashError::ApprovalNotPending,
     );
 
     approval.status = ApprovalStatus::Expired;

@@ -1824,10 +1824,14 @@ name = "onleash"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "borsh",
  "litesvm",
+ "solana-instruction",
  "solana-keypair",
  "solana-message",
+ "solana-pubkey 4.2.0",
  "solana-signer",
+ "solana-system-interface 2.0.0",
  "solana-transaction",
 ]
 
