@@ -6,6 +6,7 @@ import {
   Fira_Code,
 } from "next/font/google";
 import "../global.css";
+import SolanaWalletProvider from "@/components/WalletProvider";
 
 const bebasNeue = Bebas_Neue({
   weight: "400",
@@ -53,7 +54,9 @@ export default function RootLayout({
         <div className="bg-vignette" aria-hidden="true" />
         <div className="bg-scanlines" aria-hidden="true" />
         <div className="bg-noise" aria-hidden="true" />
-        {children}
+        <SolanaWalletProvider>
+          {children}
+        </SolanaWalletProvider>
       </body>
     </html>
   );
