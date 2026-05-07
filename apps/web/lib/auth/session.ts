@@ -1,4 +1,4 @@
-import { IronSessionOptions } from "iron-session";
+import { SessionOptions } from "iron-session";
 
 export interface SessionData {
   userId: string;
@@ -7,7 +7,7 @@ export interface SessionData {
   role: string;
 }
 
-export const sessionOptions: IronSessionOptions = {
+export const sessionOptions: SessionOptions = {
   password: process.env.SESSION_SECRET!,
   cookieName: "onleash-session",
   cookieOptions: {

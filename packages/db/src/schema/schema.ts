@@ -262,6 +262,7 @@ export const policies = pgTable(
       .notNull(),
     timezone: varchar("timezone", { length: 64 }).default("UTC").notNull(),
     version: integer("version").default(1).notNull(),
+    parentPolicyPda: text("parent_policy_pda"),
     isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -345,6 +346,7 @@ export const approvals = pgTable(
     requestedBy: approvalRequestedByEnum("requested_by")
       .default("sdk")
       .notNull(),
+    approvalPda: text("approval_pda"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     resolvedAt: timestamp("resolved_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
