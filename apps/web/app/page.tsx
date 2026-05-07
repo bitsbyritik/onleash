@@ -6,7 +6,6 @@ import DemoSection from '@/components/landing/LiveDemo'
 import SnippetSection from '@/components/landing/HowItWorks'
 import TelegramSection from '@/components/landing/TelegramSection'
 import FooterSection from '@/components/landing/Footer'
-import './landing.css'
 
 export default function Home() {
   return (

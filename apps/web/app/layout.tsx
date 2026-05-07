@@ -5,7 +5,7 @@ import {
   Instrument_Serif,
   Fira_Code,
 } from "next/font/google";
-import "./globals.css";
+import "../global.css";
 
 const bebasNeue = Bebas_Neue({
   weight: "400",
