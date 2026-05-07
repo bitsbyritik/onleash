@@ -148,7 +148,7 @@ export default function Differentiators() {
           <div className="eyebrow">What makes OnLeash different</div>
           <h2 className="section-title">
             Everything you need.<br />
-            <span style={{ color: 'var(--mint)' }}>Nothing you don't.</span>
+            <span style={{ color: 'var(--mint)' }}>Nothing you don&apos;t.</span>
           </h2>
           <p className="section-sub">
             Onchain enforcement, granular caps, human-in-the-loop approvals, and

@@ -20,6 +20,8 @@ async function fireTelegramNotification(
     expiresAt: string;
   },
 ) {
+  void _channelId;
+  void _payload;
   // placeholder — wire up real Telegram bot API when notification service is ready
 }
 
@@ -36,6 +38,7 @@ export async function POST(req: NextRequest) {
 
     const { transferId, walletId, amount, toAddress, token, expiresAt, sessionId } =
       parsed.data;
+    void sessionId;
 
     const wallet = await db.query.agentWallets.findFirst({
       where: eq(agentWallets.id, walletId),

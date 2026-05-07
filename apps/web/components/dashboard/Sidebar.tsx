@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Icon from './Icon';
+
+type DashboardNetwork = 'mainnet' | 'devnet' | 'testnet';
 
 const NAV_ITEMS = [
   { id: 'overview',  label: 'Overview',  href: '/dashboard',           icon: 'overview' },
@@ -14,10 +17,37 @@ const NAV_ITEMS = [
 
 interface SidebarProps {
   pendingCount?: number;
+  workspaceName?: string;
+  workspaceSlug?: string;
+  network?: DashboardNetwork;
 }
 
-export default function Sidebar({ pendingCount = 0 }: SidebarProps) {
+export default function Sidebar({
+  pendingCount = 0,
+  workspaceName = 'Workspace',
+  workspaceSlug = 'workspace',
+  network = 'devnet',
+}: SidebarProps) {
   const pathname = usePathname();
+  const [displayNetwork, setDisplayNetwork] = useState(network);
+
+  useEffect(() => {
+    setDisplayNetwork(network);
+  }, [network]);
+
+  useEffect(() => {
+    const updateNetwork = (event: Event) => {
+      const next = (event as CustomEvent<{ network: DashboardNetwork }>).detail?.network;
+      if (next) setDisplayNetwork(next);
+    };
+    window.addEventListener('onleash:network-change', updateNetwork);
+    return () => window.removeEventListener('onleash:network-change', updateNetwork);
+  }, []);
+
+  async function logout() {
+    await fetch('/api/dashboard/logout', { method: 'POST' });
+    window.location.href = '/sign-in';
+  }
 
   const getActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard';
@@ -34,8 +64,8 @@ export default function Sidebar({ pendingCount = 0 }: SidebarProps) {
       <div className="ds-sb-workspace">
         <div>Workspace</div>
         <div className="ds-ws-row">
-          <span>arc-labs</span>
-          <span className="ds-ws-net">DEVNET</span>
+          <span title={workspaceName}>{workspaceSlug}</span>
+          <span className={`ds-ws-net ${displayNetwork}`}>{displayNetwork}</span>
         </div>
       </div>
 
@@ -61,11 +91,11 @@ export default function Sidebar({ pendingCount = 0 }: SidebarProps) {
       <div className="ds-sb-user">
         <div className="ds-sb-av">M</div>
         <div className="ds-sb-info">
-          <div className="ds-sb-em">morgan@arc-labs.io</div>
-          <div className="ds-sb-pl">Pro · 5 seats</div>
+          <div className="ds-sb-em" title={workspaceName}>{workspaceName}</div>
+          <div className="ds-sb-pl">/{workspaceSlug}</div>
         </div>
-        <button style={{ color: 'var(--ink-faint)', fontSize: 16, padding: '4px 6px', background: 'none', border: 'none', cursor: 'pointer' }} aria-label="account menu">
-          <Icon name="menu" />
+        <button className="ds-sb-logout" type="button" onClick={logout} aria-label="Log out" title="Log out">
+          -&gt;
         </button>
       </div>
     </aside>

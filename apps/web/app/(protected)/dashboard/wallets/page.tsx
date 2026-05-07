@@ -53,14 +53,17 @@ export default function WalletsPage() {
           {shown.map(w => {
             const pct = Math.min(100, (w.spent / w.cap) * 100);
             const cls = pct >= 85 ? 'red' : pct >= 60 ? 'amber' : '';
-            const href = w.id === 'vega' ? `/dashboard/wallets/${w.id}` : '#';
+            const role = w.hierarchy?.role ?? 'parent';
             return (
-              <Link key={w.id} href={href} className="ds-wal-row">
+              <Link key={w.id} href={`/dashboard/wallets/${w.id}`} className="ds-wal-row">
                 <div className="nm">
                   <span className="n">{w.name}</span>
                   <span className="pk">{w.pk.slice(0, 18)}…{w.pk.slice(-6)}</span>
                 </div>
-                <span className={`ds-bdg ${w.status}`}>{w.status}</span>
+                <span className="ds-wal-badges">
+                  <span className={`ds-bdg ${w.status}`}>{w.status}</span>
+                  <span className={`ds-bdg ${role === 'child' ? 'pending' : 'active'}`}>{role}</span>
+                </span>
                 <div className="ct">
                   <span><b>{w.transfers.toLocaleString()}</b> transfers</span>
                   <span className={w.blocked > 0 ? 'blk' : ''}>{w.blocked} blocked</span>

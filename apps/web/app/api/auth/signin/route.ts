@@ -5,18 +5,25 @@ import nacl from "tweetnacl";
 import bs58 from "bs58";
 import { getIronSession } from "iron-session";
 import { sessionOptions } from "@/lib/auth/session";
+import { databaseUnavailable, isDatabaseUnavailable } from "../_lib/db-error";
 
 export async function POST(req: NextRequest) {
   const { walletAddress, signature, nonce } = await req.json();
 
   // 1. find valid unused nonce
-  const nonceRecord = await db.query.authNonces.findFirst({
-    where: and(
-      eq(authNonces.nonce, nonce),
-      eq(authNonces.walletAddress, walletAddress),
-      gt(authNonces.expiresAt, new Date()),
-    ),
-  });
+  let nonceRecord;
+  try {
+    nonceRecord = await db.query.authNonces.findFirst({
+      where: and(
+        eq(authNonces.nonce, nonce),
+        eq(authNonces.walletAddress, walletAddress),
+        gt(authNonces.expiresAt, new Date()),
+      ),
+    });
+  } catch (error) {
+    if (isDatabaseUnavailable(error)) return databaseUnavailable();
+    throw error;
+  }
 
   if (!nonceRecord || nonceRecord.usedAt) {
     return NextResponse.json(

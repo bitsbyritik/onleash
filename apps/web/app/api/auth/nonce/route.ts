@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@repo/db";
 import { authNonces } from "@repo/db/schema";
 import { randomBytes } from "crypto";
+import { databaseUnavailable, isDatabaseUnavailable } from "../_lib/db-error";
 
 export async function POST(req: NextRequest) {
   const { walletAddress } = await req.json();
@@ -15,11 +16,16 @@ export async function POST(req: NextRequest) {
   const nonce = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min
 
-  await db.insert(authNonces).values({
-    nonce,
-    walletAddress,
-    expiresAt,
-  });
+  try {
+    await db.insert(authNonces).values({
+      nonce,
+      walletAddress,
+      expiresAt,
+    });
+  } catch (error) {
+    if (isDatabaseUnavailable(error)) return databaseUnavailable();
+    throw error;
+  }
 
   const message =
     `Sign in to OnLeash\n` +

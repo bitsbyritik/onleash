@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
+
 export default function Nav() {
   return (
     <nav className="nav">
       <div className="nav-inner">
-        <a href="/" className="brand" style={{ gap: 0 }}>
+        <Link href="/" className="brand" style={{ gap: 0 }}>
           <span style={{
             fontFamily: 'var(--display), "Bebas Neue", sans-serif',
             fontSize: 26,
@@ -15,7 +17,7 @@ export default function Nav() {
             <span style={{ color: 'var(--ink-dim)' }}>On</span>
             <span style={{ color: 'var(--mint)' }}>Leash</span>
           </span>
-        </a>
+        </Link>
 
         <div className="nav-links">
           <a href="#features">Features</a>

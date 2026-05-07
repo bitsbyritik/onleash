@@ -99,6 +99,7 @@ export const teams = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     slug: varchar("slug", { length: 63 }).notNull(),
+    defaultNetwork: networkEnum("default_network").default("devnet").notNull(),
     plan: planEnum("plan").default("free").notNull(),
     walletLimit: integer("wallet_limit").default(1).notNull(),
     monthlyTransferLimit: integer("monthly_transfer_limit").default(100),

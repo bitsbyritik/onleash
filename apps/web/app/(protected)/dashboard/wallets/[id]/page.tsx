@@ -15,6 +15,12 @@ export default function WalletDetailPage({ params }: { params: { id: string } })
 
   const transfers = TRANSFERS.filter(t => t.wallet === w.name);
   const pct = (w.spent / w.cap) * 100;
+  const hierarchyRole = w.hierarchy?.role ?? 'parent';
+  const childWallets = WALLETS.filter(x => x.hierarchy?.parentId === w.id);
+  const parentRemaining =
+    w.hierarchy?.parentDailyCap !== undefined && w.hierarchy?.parentSpendToday !== undefined
+      ? Math.max(0, w.hierarchy.parentDailyCap - w.hierarchy.parentSpendToday)
+      : undefined;
 
   const breadcrumb = (
     <>
@@ -33,6 +39,9 @@ export default function WalletDetailPage({ params }: { params: { id: string } })
             <div className="pk">PK <b>{w.pk}</b></div>
             <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
               <span className={`ds-bdg ${w.status}`}>{w.status}</span>
+              <span className={`ds-bdg ${hierarchyRole === 'child' ? 'pending' : 'active'}`}>
+                {hierarchyRole}
+              </span>
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--ink-faint)', letterSpacing: '0.12em' }}>
                 POLICY · {w.policy.toUpperCase()}
               </span>
@@ -81,19 +90,92 @@ export default function WalletDetailPage({ params }: { params: { id: string } })
             </div>
 
             <div className="ds-section-h">
+              <h2>Hierarchy</h2>
+              <span className="lbl">{hierarchyRole === 'child' ? 'child bounded by parent policy' : 'parent policy root'}</span>
+            </div>
+
+            {hierarchyRole === 'child' && w.hierarchy ? (
+              <div className="ds-hierarchy-grid">
+                <div className="ds-hierarchy-card">
+                  <div className="k">Wallet type</div>
+                  <div className="v warn">Child</div>
+                  <div className="sub">Spend is bounded by its own cap and the parent policy.</div>
+                </div>
+                <div className="ds-hierarchy-card">
+                  <div className="k">Parent wallet / policy</div>
+                  <div className="v">
+                    {w.hierarchy.parentId ? (
+                      <Link href={`/dashboard/wallets/${w.hierarchy.parentId}`}>{w.hierarchy.parentWallet}</Link>
+                    ) : (
+                      w.hierarchy.parentWallet
+                    )}
+                  </div>
+                  <div className="sub">{w.hierarchy.parentPolicy}</div>
+                </div>
+                <div className="ds-hierarchy-card">
+                  <div className="k">Child daily cap</div>
+                  <div className="v mint">${w.hierarchy.childDailyCap?.toLocaleString()}</div>
+                  <div className="sub">local cap for this child agent</div>
+                </div>
+                <div className="ds-hierarchy-card">
+                  <div className="k">Parent daily cap</div>
+                  <div className="v">${w.hierarchy.parentDailyCap?.toLocaleString()}</div>
+                  <div className="sub">
+                    {parentRemaining !== undefined
+                      ? `$${parentRemaining.toLocaleString()} parent budget remaining`
+                      : 'maximum shared budget across children'}
+                  </div>
+                </div>
+                <div className="ds-hierarchy-card">
+                  <div className="k">Child spend today</div>
+                  <div className="v warn">${w.hierarchy.childSpendToday?.toFixed(2)}</div>
+                  <div className="sub">resets 00:00 UTC with policy timezone</div>
+                </div>
+              </div>
+            ) : (
+              <div className="ds-hierarchy-grid">
+                <div className="ds-hierarchy-card">
+                  <div className="k">Wallet type</div>
+                  <div className="v mint">Parent</div>
+                  <div className="sub">Child wallets can inherit this wallet&apos;s budget envelope.</div>
+                </div>
+                <div className="ds-hierarchy-card">
+                  <div className="k">Parent daily cap</div>
+                  <div className="v">${(w.hierarchy?.parentDailyCap ?? w.cap).toLocaleString()}</div>
+                  <div className="sub">upper bound for child-agent budgets</div>
+                </div>
+                <div className="ds-hierarchy-card">
+                  <div className="k">Children</div>
+                  <div className="v">{childWallets.length}</div>
+                  <div className="sub">
+                    {childWallets.length > 0
+                      ? childWallets.map(child => child.name).join(', ')
+                      : 'No child wallets attached'}
+                  </div>
+                </div>
+                <div className="ds-hierarchy-card">
+                  <div className="k">Parent spend today</div>
+                  <div className="v warn">${(w.hierarchy?.parentSpendToday ?? w.spent).toLocaleString()}</div>
+                  <div className="sub">shared spend envelope consumed today</div>
+                </div>
+              </div>
+            )}
+
+            <div className="ds-section-h">
               <h2>Recent activity</h2>
               <span className="lbl">{transfers.length} transfers · last 24h</span>
             </div>
             <div className="ds-panel">
               <table className="ds-tt">
                 <thead>
-                  <tr><th>Time</th><th>To</th><th className="right">Amount</th><th className="right">Status</th></tr>
+                  <tr><th>Time</th><th>To</th><th>Reason</th><th className="right">Amount</th><th className="right">Status</th></tr>
                 </thead>
                 <tbody>
                   {transfers.map(t => (
                     <tr key={t.id}>
                       <td className="time">{t.time}</td>
                       <td className="addr">{t.to.lbl} · {t.to.to.slice(0, 12)}…</td>
+                      <td style={{ color: 'var(--ink-faint)', fontSize: 11 }}>{t.reason || '—'}</td>
                       <td className={`am${t.status === 'blocked' ? ' neg' : ''}`}>{t.amount.toFixed(2)} {t.token}</td>
                       <td className="right"><span className={`ds-bdg ${t.status}`}>{t.status}</span></td>
                     </tr>

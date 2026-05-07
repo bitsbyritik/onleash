@@ -5,6 +5,16 @@ export interface Wallet {
   id: string;
   name: string;
   pk: string;
+  hierarchy?: {
+    role: 'parent' | 'child';
+    parentId?: string;
+    parentWallet?: string;
+    parentPolicy?: string;
+    parentDailyCap?: number;
+    parentSpendToday?: number;
+    childDailyCap?: number;
+    childSpendToday?: number;
+  };
   status: WalletStatus;
   transfers: number;
   blocked: number;
@@ -72,6 +82,16 @@ export const WALLETS: Wallet[] = [
     pk: '7gXqJ4mPp9bM2vLi5xZh3YwR8aTcU1qN6sB',
     status: 'active', transfers: 1284, blocked: 12, spent: 87.40, cap: 100,
     policy: 'strict-v1', created: '2026-04-12',
+    hierarchy: {
+      role: 'child',
+      parentId: 'orion',
+      parentWallet: 'orion-treasury',
+      parentPolicy: 'treasury-v3',
+      parentDailyCap: 5000,
+      parentSpendToday: 4988,
+      childDailyCap: 100,
+      childSpendToday: 87.40,
+    },
     rules: { maxTx: 50, dailyCap: 100, hitlAt: 50, tokens: ['USDC','SOL','JUP'], hours: '00:00–23:59 UTC' },
   },
   {
@@ -83,6 +103,11 @@ export const WALLETS: Wallet[] = [
     id: 'orion', name: 'orion-treasury',
     pk: '9hLm2vQrW7uTpA1xJfNcK6dRsB4yE8gZi5L',
     status: 'active', transfers: 642, blocked: 2, spent: 4280, cap: 5000, policy: 'treasury-v3',
+    hierarchy: {
+      role: 'parent',
+      parentDailyCap: 5000,
+      parentSpendToday: 4988,
+    },
   },
   {
     id: 'rigel', name: 'rigel-mev',
@@ -107,6 +132,7 @@ export const WALLETS: Wallet[] = [
 ];
 
 export const TRANSFERS: Transfer[] = [
+  { id: 't0',  time: 'just now', wallet: 'vega-prod',           to: ADDRS[4]!, amount: 60.00, token: 'USDC', status: 'blocked',  reason: 'parent_daily_cap_exceeded' },
   { id: 't1',  time: 'just now', wallet: 'rigel-mev',           to: ADDRS[0]!, amount: 24.50, token: 'USDC', status: 'success' },
   { id: 't2',  time: '2m ago',   wallet: 'altair-arb',          to: ADDRS[1]!, amount: 8.20,  token: 'SOL',  status: 'success' },
   { id: 't3',  time: '4m ago',   wallet: 'vega-prod',           to: ADDRS[6]!, amount: 30.00, token: 'USDC', status: 'blocked',  reason: 'blocklist_hit' },

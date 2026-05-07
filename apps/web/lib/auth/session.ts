@@ -7,8 +7,15 @@ export interface SessionData {
   role: string;
 }
 
+const devSessionSecret =
+  "onleash-local-development-session-secret-change-before-production";
+
+const sessionPassword =
+  process.env.SESSION_SECRET ??
+  (process.env.NODE_ENV === "production" ? undefined : devSessionSecret);
+
 export const sessionOptions: SessionOptions = {
-  password: process.env.SESSION_SECRET!,
+  password: sessionPassword!,
   cookieName: "onleash-session",
   cookieOptions: {
     secure: process.env.NODE_ENV === "production",
