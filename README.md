@@ -1,159 +1,172 @@
-# Turborepo starter
+# OnLeash
 
-This Turborepo starter is maintained by the Turborepo core team.
+OnLeash is a policy layer for Solana agent wallets. It wraps an agent keypair with spend limits, allow/block lists, per-vendor caps, approval thresholds, spend tracking, and human-in-the-loop approvals before a transfer is allowed to execute.
 
-## Using this example
+The repository is a Bun/Turborepo monorepo containing:
 
-Run the following command:
+- a Next.js landing page and protected dashboard
+- a TypeScript SDK for policy-checked transfers
+- a Drizzle/Postgres data layer
+- an Anchor program for on-chain policy and approval enforcement
 
-```sh
-npx create-turbo@latest
+## Workspace
+
+```txt
+apps/web                    Next.js app, dashboard, auth, and API routes
+packages/sdk                TypeScript SDK used by agent runtimes
+packages/db                 Drizzle schema, migrations, and Postgres client
+packages/ui                 Shared React UI primitives
+packages/eslint-config      Shared lint config
+packages/typescript-config  Shared TypeScript config
+programs                    Anchor workspace for the OnLeash program
 ```
 
-## What's inside?
+## Product Surface
 
-This Turborepo includes the following packages/apps:
+- Wallet-based sign-in with nonce challenge verification.
+- Team workspace, API key management, and protected dashboard pages.
+- Agent wallet registration, challenge verification, policies, transfers, approvals, violations, and spend endpoints.
+- Policy controls for daily cap, per-vendor cap, approval threshold, allowlist mode, blocklist, notification channels, and versioned policy records.
+- SDK primitives for `LeashWallet`, policy checks, spend tracking, HITL approval waits, wallet verification, API access, and Solana/Anchor execution.
+- Anchor instructions for policy initialization, child policy initialization, policy updates, direct transfers, approval requests, approved transfers, rejection/expiry, activation/deactivation, closing, and daily spend reset.
 
-### Apps and Packages
+## Prerequisites
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- Bun `1.3.5`
+- Node.js `>=18`
+- Docker, for local Postgres
+- Rust and Anchor tooling, for the Solana program
+- A Solana keypair at `~/.config/solana/id.json` when running Anchor against localnet
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Setup
 
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Install dependencies:
 
 ```sh
-cd my-turborepo
-turbo build
+bun install
 ```
 
-Without global `turbo`, use your package manager:
+Start Postgres:
 
 ```sh
-cd my-turborepo
-npx turbo build
-bun dlx turbo build
-bun exec turbo build
+docker compose up -d postgres
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Create `.env` in the repo root:
 
 ```sh
-turbo build --filter=docs
+DATABASE_URL=postgres://onleash:onleash@localhost:5432/onleash
+SESSION_SECRET=replace-with-a-long-random-secret
+NEXT_PUBLIC_RPC_URL=https://api.devnet.solana.com
 ```
 
-Without global `turbo`:
+Push the Drizzle schema:
 
 ```sh
-npx turbo build --filter=docs
-bun exec turbo build --filter=docs
-bun exec turbo build --filter=docs
+bun run db:push
 ```
 
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Start the app:
 
 ```sh
-cd my-turborepo
-turbo dev
+bun run dev
 ```
 
-Without global `turbo`, use your package manager:
+The web app runs at `http://localhost:3000`.
+
+## Common Commands
 
 ```sh
-cd my-turborepo
-npx turbo dev
-bun exec turbo dev
-bun exec turbo dev
+bun run dev          # run workspace dev tasks
+bun run build        # build all packages/apps through Turbo
+bun run lint         # lint all configured workspaces
+bun run check-types  # run type checks
+bun run format       # format TS/TSX/MD files
+
+bun run db:generate  # create Drizzle migrations
+bun run db:migrate   # run Drizzle migrations using DATABASE_URL
+bun run db:push      # push schema changes using DATABASE_URL
+bun run db:studio    # open Drizzle Studio
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Package-specific examples:
 
 ```sh
-turbo dev --filter=web
+bun run --filter web dev
+bun run --filter @repo/sdk build
+bun run --filter @repo/db db:studio
 ```
 
-Without global `turbo`:
+## SDK Usage
+
+The SDK exports `LeashWallet` plus lower-level clients and policy helpers.
+
+```ts
+import { Connection, Keypair } from "@solana/web3.js";
+import { LeashWallet } from "@repo/sdk";
+
+const wallet = new LeashWallet({
+  keypair: Keypair.generate(),
+  connection: new Connection("https://api.devnet.solana.com"),
+  apiKey: process.env.ONLEASH_API_KEY!,
+  walletId: process.env.ONLEASH_WALLET_ID!,
+  network: "devnet",
+  apibaseUrl: "http://localhost:3000",
+});
+
+const result = await wallet.send({
+  to: "8aZKj1111111111111111111111111111111111111",
+  amount: 60n,
+  token: "USDC",
+  memo: "agent payment",
+});
+```
+
+`send()` validates input, verifies the wallet, loads policy and spend state, blocks policy violations, requests approval when thresholds require it, executes the transfer through Anchor, records spend, and returns a status such as `success`, `blocked`, or `rejected`.
+
+## Web API Areas
+
+The Next.js app exposes API routes for:
+
+- `api/auth/*`: wallet nonce and sign-in flow
+- `api/dashboard/*`: session workspace, logout, and API key management
+- `api/sdk/wallets/*`: wallet registration, challenge verification, policy, transfers, and spend
+- `api/sdk/approvals/*`: approval listing and resolution
+- `api/sdk/transfers/*`: transfer updates
+- `api/sdk/violations`: policy violation records
+
+SDK routes authenticate with generated API keys.
+
+## Database
+
+The schema is in `packages/db/src/schema`. Current core tables include teams, users, auth nonces, API keys, agent wallets, notification channels, policies, transfers, policy violations, approvals, spend tracking, vendor spend, notification logs, audit logs, and webhook events.
+
+Local Postgres defaults are defined in `docker-compose.yaml`:
+
+```txt
+postgres://onleash:onleash@localhost:5432/onleash
+```
+
+## Anchor Program
+
+The Anchor workspace lives in `programs`. The localnet program id is:
+
+```txt
+6ufLBSxNADjAAS7NT5f9Phnvjxc2We7n7q8s9uKx5GBn
+```
+
+Useful commands from `programs`:
 
 ```sh
-npx turbo dev --filter=web
-bun exec turbo dev --filter=web
-bun exec turbo dev --filter=web
+anchor build
+anchor test
+anchor deploy
 ```
 
-### Remote Caching
+The program currently exposes policy lifecycle instructions, policy-checked transfers, approval request/approve/reject/expire flows, approved transfer execution, and spend reset.
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+## Notes
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-bun exec turbo login
-bun exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-bun exec turbo link
-bun exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+- `apps/web/components/landing/HowItWorks.tsx` currently shows package names such as `@onleash/sdk`, while the local workspace package is `@repo/sdk`.
+- Telegram/notification delivery is scaffolded in the API and schema; the approval route still has a placeholder for wiring a real notification service.
+- The root README intentionally documents the current repo state, not the original Turborepo starter.

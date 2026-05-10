@@ -26,9 +26,9 @@ export default function Nav() {
           <a href="#hitl">HITL</a>
         </div>
 
-        <a href="#get-started" className="nav-cta">
+        <Link href="/sign-up" className="nav-cta">
           Get Started &nbsp;<span className="cta-arr">→</span>
-        </a>
+        </Link>
       </div>
     </nav>
   );
