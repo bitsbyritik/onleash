@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export type Token = "USDC" | "SOL" | "BONK" | "JUP";
 
-export type Network = "mainnet" | "devnet" | "testnet";
+export type Network = "mainnet" | "devnet";
 
 export const TransferParamsSchema = z.object({
   to: z.string().min(32).max(44),
@@ -81,10 +81,13 @@ export interface ApprovalResult {
 
 export interface LeashWalletConfig {
   keypair: import("@solana/web3.js").Keypair;
-  connection: import("@solana/web3.js").Connection;
+  network: Network;
   apiKey: string;
   walletId: string;
-  network?: Network;
+  /** Override the default RPC endpoint for the chosen network */
+  rpcUrl?: string;
+  /** Provide a pre-built Connection instead of letting the SDK create one */
+  connection?: import("@solana/web3.js").Connection;
   apibaseUrl?: string;
   timeoutMs?: number;
 }
@@ -107,6 +110,7 @@ export interface ApiPolicyResponse {
   notificationChannelIds: string[];
   timezone: string;
   version: number;
+  parentPolicyPda: string | null;
 }
 
 export interface ApiTransferResponse {

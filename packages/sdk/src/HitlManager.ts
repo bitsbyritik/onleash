@@ -12,14 +12,20 @@ export class HitlManager {
   ) {}
 
   async requestAndWait(
-    _transfer: TransferParams,
+    transfer: TransferParams,
     transferId: string,
+    walletId: string,
   ): Promise<ApprovalResult> {
     const expiresAt = new Date(Date.now() + this.timeoutMs);
 
     const approval = await this.api.createApproval({
       transferId,
+      walletId,
+      amount: transfer.amount.toString(),
+      toAddress: transfer.to,
+      token: transfer.token,
       expiresAt: expiresAt.toISOString(),
+      sessionId: transfer.sessionId,
     });
 
     return this.poll(approval.id, expiresAt);

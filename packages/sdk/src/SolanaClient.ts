@@ -12,7 +12,12 @@ import {
 } from "@solana/spl-token";
 import type { TransferParams, Network } from "./types";
 
-const MINTS: Partial<Record<Network, Partial<Record<string, string>>>> = {
+export const CLUSTER_URLS: Record<Network, string> = {
+  mainnet: "https://api.mainnet-beta.solana.com",
+  devnet: "https://api.devnet.solana.com",
+};
+
+const MINTS: Record<Network, Partial<Record<string, string>>> = {
   mainnet: {
     USDC: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
     BONK: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",

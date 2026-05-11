@@ -55,14 +55,15 @@ export async function GET(
       }),
     ]);
 
-    const byVendor: Record<string, string> = {};
+    const perVendor: Record<string, string> = {};
     for (const row of vendorRows) {
-      byVendor[row.toAddress] = row.totalSpent.toString();
+      perVendor[row.toAddress] = row.totalSpent.toString();
     }
 
     return Response.json({
-      totalToday: (trackingRow?.totalSpent ?? 0n).toString(),
-      byVendor,
+      totalSpent: (trackingRow?.totalSpent ?? 0n).toString(),
+      perVendor,
+      date: today,
     });
   } catch {
     return Errors.internal();

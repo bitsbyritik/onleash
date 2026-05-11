@@ -162,7 +162,12 @@ export class ApiClient {
 
   async createApproval(params: {
     transferId: string;
+    walletId: string;
+    amount: string;
+    toAddress: string;
+    token: string;
     expiresAt: string;
+    sessionId?: string;
   }): Promise<ApiApprovalResponse> {
     return this.request<ApiApprovalResponse>(`/api/sdk/approvals`, {
       method: "POST",

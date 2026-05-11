@@ -3,7 +3,7 @@ export { PolicyEngine } from "./PolicyEngine";
 export { SpendTracker } from "./SpendTracker";
 export { HitlManager } from "./HitlManager";
 export { WalletVerifier } from "./WalletVerifier";
-export { SolanaClient } from "./SolanaClient";
+export { SolanaClient, CLUSTER_URLS } from "./SolanaClient";
 export { ApiClient } from "./ApiClient";
 
 export type {

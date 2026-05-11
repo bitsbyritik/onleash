@@ -1,12 +1,11 @@
-import { Keypair, PublicKey } from "@solana/web3.js";
-import type { Connection } from "@solana/web3.js";
+import { Keypair, PublicKey, Connection } from "@solana/web3.js";
 import { ApiClient } from "./ApiClient";
 import { AnchorClient } from "./AnchorClient";
 import { PolicyEngine } from "./PolicyEngine";
 import { SpendTracker } from "./SpendTracker";
 import { HitlManager } from "./HitlManager";
 import { WalletVerifier } from "./WalletVerifier";
-import { SolanaClient } from "./SolanaClient";
+import { SolanaClient, CLUSTER_URLS } from "./SolanaClient";
 import { TransferParamsSchema, OnLeashError } from "./types";
 import type {
   LeashWalletConfig,
@@ -29,20 +28,20 @@ export class LeashWallet {
   private policy: PolicyConfig | null = null;
 
   constructor(private readonly config: LeashWalletConfig) {
+    const connection =
+      config.connection ??
+      new Connection(config.rpcUrl ?? CLUSTER_URLS[config.network], "confirmed");
+
     this.api = new ApiClient({
       apiKey: config.apiKey,
       walletId: config.walletId,
       baseUrl: config.apibaseUrl,
     });
 
-    this.anchor = new AnchorClient(config.connection, config.keypair);
+    this.anchor = new AnchorClient(connection, config.keypair);
     this.verifier = new WalletVerifier(config.keypair, this.api);
     this.hitl = new HitlManager(this.api, config.timeoutMs);
-    this.solana = new SolanaClient(
-      config.connection,
-      config.keypair,
-      config.network ?? "mainnet",
-    );
+    this.solana = new SolanaClient(connection, config.keypair, config.network);
   }
 
   // ─── Main send ─────────────────────────────────────────────────────────────
@@ -139,7 +138,7 @@ export class LeashWallet {
         );
         anchorApprovalPda = approvalPda;
 
-        approval = await this.hitl.requestAndWait(transfer, transferId);
+        approval = await this.hitl.requestAndWait(transfer, transferId, this.config.walletId);
 
         if (approval.status !== "approved") {
           await this.api.updateTransfer(transferId, { status: "rejected" });
@@ -309,6 +308,7 @@ export class LeashWallet {
       notificationChannelIds: raw.notificationChannelIds,
       timezone: raw.timezone,
       version: raw.version,
+      parentPolicyPda: raw.parentPolicyPda ?? undefined,
     };
   }
 }
