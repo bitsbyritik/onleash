@@ -18,7 +18,7 @@ export class ApiClient {
   constructor(config: { apiKey: string; walletId: string; baseUrl?: string }) {
     this.apiKey = config.apiKey;
     this.walletId = config.walletId;
-    this.baseUrl = (config.baseUrl ?? "https://api.onleash.dev").replace(
+    this.baseUrl = (config.baseUrl ?? "https://onleash-web.vercel.app").replace(
       /\/$/,
       "",
     );

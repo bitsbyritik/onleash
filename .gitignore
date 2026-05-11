@@ -45,3 +45,4 @@ CONTEXT.md
 .claude
 test-ledger/
 pitch-deck-20260511-123919.html
+.env*.local
