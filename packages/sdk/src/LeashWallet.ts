@@ -1,5 +1,5 @@
-import { PublicKey } from "@solana/web3.js";
-import type { Keypair, Connection } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
+import type { Connection } from "@solana/web3.js";
 import { ApiClient } from "./ApiClient";
 import { AnchorClient } from "./AnchorClient";
 import { PolicyEngine } from "./PolicyEngine";
@@ -228,12 +228,14 @@ export class LeashWallet {
 
   async createChildAgent(params: {
     name: string;
+    keypair?: Keypair;
     dailyCap: bigint;
     perVendorCap?: bigint;
     approvalThreshold?: bigint;
   }): Promise<LeashWallet> {
     await this.init();
     const parentPolicy = this.policy!;
+    const childKeypair = params.keypair ?? Keypair.generate();
 
     // validate child cap doesn't exceed parent
     if (params.dailyCap > parentPolicy.dailyCap) {
@@ -242,12 +244,20 @@ export class LeashWallet {
       );
     }
 
+    const perVendorCap = params.perVendorCap ?? params.dailyCap;
+    if (perVendorCap > parentPolicy.perVendorCap) {
+      throw new OnLeashError(
+        `Child perVendorCap (${perVendorCap}) cannot exceed parent perVendorCap (${parentPolicy.perVendorCap})`,
+      );
+    }
+
     // create child wallet via API
     const child = await this.api.createChildWallet({
       name: params.name,
       parentWalletId: this.config.walletId,
+      publicKey: childKeypair.publicKey.toBase58(),
       dailyCap: params.dailyCap.toString(),
-      perVendorCap: (params.perVendorCap ?? params.dailyCap).toString(),
+      perVendorCap: perVendorCap.toString(),
       approvalThreshold: (
         params.approvalThreshold ?? parentPolicy.approvalThreshold
       ).toString(),
@@ -255,6 +265,7 @@ export class LeashWallet {
 
     return new LeashWallet({
       ...this.config,
+      keypair: childKeypair,
       walletId: child.walletId,
     });
   }

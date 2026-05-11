@@ -32,6 +32,10 @@ export async function POST(
 
     const { challenge, signature, publicKey } = parsed.data;
 
+    if (publicKey !== wallet.publicKey) {
+      return Errors.badRequest("Public key does not match wallet");
+    }
+
     const nonceRecord = await db.query.authNonces.findFirst({
       where: and(
         eq(authNonces.nonce, challenge),

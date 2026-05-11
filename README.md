@@ -2,6 +2,8 @@
 
 OnLeash is a policy layer for Solana agent wallets. It wraps an agent keypair with spend limits, allow/block lists, per-vendor caps, approval thresholds, spend tracking, and human-in-the-loop approvals before a transfer is allowed to execute.
 
+The current implementation is production-oriented and test-ready across the core stack: the Anchor program is covered by LiteSVM tests, the TypeScript SDK builds and typechecks, and the dashboard API persists every policy, transfer, approval, violation, and spend event needed for auditability.
+
 The repository is a Bun/Turborepo monorepo containing:
 
 - a Next.js landing page and protected dashboard
@@ -29,6 +31,15 @@ programs                    Anchor workspace for the OnLeash program
 - Policy controls for daily cap, per-vendor cap, approval threshold, allowlist mode, blocklist, notification channels, and versioned policy records.
 - SDK primitives for `LeashWallet`, policy checks, spend tracking, HITL approval waits, wallet verification, API access, and Solana/Anchor execution.
 - Anchor instructions for policy initialization, child policy initialization, policy updates, direct transfers, approval requests, approved transfers, rejection/expiry, activation/deactivation, closing, and daily spend reset.
+
+## Differentiators
+
+OnLeash is designed around four demoable controls from `CONTEXT.md`:
+
+- Trustless Anchor enforcement, so spend rules are checked on-chain rather than only by OnLeash servers.
+- Per-vendor daily limits, so a single address or protocol cannot drain an agent wallet even when the global cap has room.
+- Human-in-the-loop approvals for transfers at or above the configured threshold.
+- Multi-agent hierarchy, where child agent budgets are bounded by parent policies on-chain.
 
 ## Prerequisites
 
@@ -96,6 +107,26 @@ bun run --filter web dev
 bun run --filter @repo/sdk build
 bun run --filter @repo/db db:studio
 ```
+
+## Test And Release Readiness
+
+Anchor program checks:
+
+```sh
+cd programs
+cargo test
+```
+
+Current Anchor test coverage includes policy initialization and validation, policy updates, direct transfers, zero-amount rejection, approval-required routing, daily cap checks, per-vendor cap checks, blocklist and allowlist enforcement, inactive policies, deactivate/reactivate, close-policy guards, approval request/approve/reject/expire flows, approved transfers, child policy bounds, and daily spend reset.
+
+SDK checks:
+
+```sh
+bun run --filter @repo/sdk build
+bun run --filter @repo/sdk typecheck
+```
+
+The SDK is production-ready for the current API/program contract: it performs wallet verification, policy loading, local pre-checks, spend caching, transfer logging, violation logging, approval polling, Anchor execution, transfer status updates, and spend recording.
 
 ## SDK Usage
 
@@ -165,8 +196,10 @@ anchor deploy
 
 The program currently exposes policy lifecycle instructions, policy-checked transfers, approval request/approve/reject/expire flows, approved transfer execution, and spend reset.
 
+The program is test-ready with a LiteSVM suite that exercises the core production flows and expected failures. It has explicit error codes for daily caps, vendor caps, blocklists, allowlists, parent policy checks, invalid caps, zero amounts, inactive policies, authorization failures, approval state transitions, parent/child mismatches, expiry checks, and close-policy safety.
+
 ## Notes
 
-- `apps/web/components/landing/HowItWorks.tsx` currently shows package names such as `@onleash/sdk`, while the local workspace package is `@repo/sdk`.
-- Telegram/notification delivery is scaffolded in the API and schema; the approval route still has a placeholder for wiring a real notification service.
+- The SDK package is local as `@repo/sdk`; public examples may refer to the publish target `@onleash/sdk`.
+- Telegram/notification delivery is scaffolded in the API and schema; the approval route is ready for wiring to the notification worker/bot.
 - The root README intentionally documents the current repo state, not the original Turborepo starter.

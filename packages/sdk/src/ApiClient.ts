@@ -50,6 +50,7 @@ export class ApiClient {
   async createChildWallet(params: {
     name: string;
     parentWalletId: string;
+    publicKey: string;
     dailyCap: string;
     perVendorCap: string;
     approvalThreshold: string;

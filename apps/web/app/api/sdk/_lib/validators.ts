@@ -6,6 +6,15 @@ export const VerifyBodySchema = z.object({
   publicKey: z.string().min(1),
 });
 
+export const ChildWalletCreateBodySchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  parentWalletId: z.string().uuid(),
+  publicKey: z.string().min(32).max(44),
+  dailyCap: z.string().regex(/^\d+$/),
+  perVendorCap: z.string().regex(/^\d+$/),
+  approvalThreshold: z.string().regex(/^\d+$/),
+});
+
 export const SpendPostBodySchema = z.object({
   toAddress: z.string().min(1),
   amount: z.string().min(1),
