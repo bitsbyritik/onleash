@@ -21,7 +21,7 @@ interface Wallet {
 
 const SOL = 1_000_000_000n;
 
-function CreateWalletModal({ onClose, onCreated }: { onClose: () => void; onCreated: (walletId: string) => void }) {
+function CreateWalletModal({ onClose, onCreated }: { onClose: () => void; onCreated: (walletId: string, privateKey: string) => void }) {
   const [form, setForm] = useState({
     name: '',
     network: 'devnet',
@@ -29,34 +29,49 @@ function CreateWalletModal({ onClose, onCreated }: { onClose: () => void; onCrea
     perVendorCap: '100000000',
     approvalThreshold: '200000000',
   });
-  const [walletAddress, setWalletAddress] = useState('');
+  const [agentPublicKey, setAgentPublicKey] = useState('');
+  const [agentPrivateKey, setAgentPrivateKey] = useState('');
+  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('/api/dashboard/me')
-      .then(r => r.json())
-      .then(d => setWalletAddress(d.user?.walletAddress ?? ''));
+    // Dynamically import to keep bundle lean
+    import('@solana/web3.js').then(({ Keypair }) => {
+      import('bs58').then((bs58Module) => {
+        const bs58 = bs58Module.default ?? bs58Module;
+        const kp = Keypair.generate();
+        setAgentPublicKey(kp.publicKey.toBase58());
+        setAgentPrivateKey(bs58.encode(kp.secretKey));
+      });
+    });
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!agentPublicKey) return;
     setLoading(true);
     setError('');
     try {
       const res = await fetch('/api/dashboard/wallets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, publicKey: walletAddress }),
+        body: JSON.stringify({ ...form, publicKey: agentPublicKey }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? 'Failed to create wallet'); return; }
-      onCreated(data.walletId);
+      onCreated(data.walletId, agentPrivateKey);
     } catch {
       setError('Network error');
     } finally {
       setLoading(false);
     }
+  }
+
+  function copyPrivateKey() {
+    navigator.clipboard.writeText(agentPrivateKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   const field = (label: string, key: keyof typeof form, placeholder?: string) => (
@@ -74,15 +89,27 @@ function CreateWalletModal({ onClose, onCreated }: { onClose: () => void; onCrea
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: 'var(--void-2)', border: '1px solid var(--line-strong)', padding: 32, width: '100%', maxWidth: 480 }}>
+      <div style={{ background: 'var(--void-2)', border: '1px solid var(--line-strong)', padding: 32, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--mint)', textTransform: 'uppercase', marginBottom: 8 }}>New Agent Wallet</div>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, textTransform: 'uppercase', color: 'var(--ink)', marginBottom: 24 }}>Create Wallet</div>
 
-        <div style={{ border: '1px solid var(--line-strong)', background: 'var(--void-3)', padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ width: 7, height: 7, background: 'var(--mint)', borderRadius: '50%', boxShadow: '0 0 8px var(--mint)', flexShrink: 0 }} />
-          <span style={{ fontFamily: 'var(--font-code)', fontSize: 11, color: 'var(--ink-dim)', letterSpacing: '0.03em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {walletAddress || 'Loading wallet…'}
-          </span>
+        {/* Generated keypair display */}
+        <div style={{ border: '1px solid var(--line-strong)', background: 'var(--void-3)', padding: '14px', marginBottom: 20 }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--mint)', textTransform: 'uppercase', marginBottom: 8 }}>Generated Agent Keypair</div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: 10, color: 'var(--ink-dim)', marginBottom: 4, letterSpacing: '0.1em' }}>PUBLIC KEY</div>
+          <div style={{ fontFamily: 'var(--font-code)', fontSize: 11, color: 'var(--ink)', wordBreak: 'break-all', marginBottom: 12 }}>
+            {agentPublicKey || 'Generating…'}
+          </div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: 10, color: 'var(--ink-dim)', marginBottom: 4, letterSpacing: '0.1em' }}>PRIVATE KEY — copy for AGENT_PRIVATE_KEY in .env</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontFamily: 'var(--font-code)', fontSize: 10, color: 'var(--yellow, #f5c518)', wordBreak: 'break-all', flex: 1 }}>
+              {agentPrivateKey ? `${agentPrivateKey.slice(0, 20)}…` : 'Generating…'}
+            </div>
+            <button type="button" onClick={copyPrivateKey}
+              style={{ flexShrink: 0, background: copied ? 'var(--mint)' : 'none', color: copied ? 'var(--void)' : 'var(--mint)', border: '1px solid var(--mint)', fontFamily: 'var(--font-ui)', fontSize: 10, padding: '4px 10px', cursor: 'pointer', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
+              {copied ? '✓ COPIED' : 'COPY'}
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -132,6 +159,7 @@ export default function WalletsPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const [createdPrivKey, setCreatedPrivKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -146,9 +174,10 @@ export default function WalletsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  function handleCreated(walletId: string) {
+  function handleCreated(walletId: string, privateKey: string) {
     setShowCreate(false);
     setCreatedId(walletId);
+    setCreatedPrivKey(privateKey);
     load();
   }
 
@@ -173,9 +202,19 @@ export default function WalletsPage() {
         </div>
 
         {createdId && (
-          <div style={{ border: '1px solid var(--mint)', background: 'var(--mint-soft)', padding: '12px 16px', marginBottom: 20, fontFamily: 'var(--font-code)', fontSize: 12, color: 'var(--mint)' }}>
-            ✓ Wallet created — ID: <b>{createdId}</b>
-            <button onClick={() => { navigator.clipboard.writeText(createdId); }} style={{ marginLeft: 12, background: 'none', border: '1px solid var(--mint)', color: 'var(--mint)', fontFamily: 'var(--font-ui)', fontSize: 10, padding: '3px 8px', cursor: 'pointer', letterSpacing: '0.1em' }}>COPY</button>
+          <div style={{ border: '1px solid var(--mint)', background: 'var(--mint-soft)', padding: '16px', marginBottom: 20 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--mint)', textTransform: 'uppercase', marginBottom: 10 }}>✓ Wallet Created — Add to .env</div>
+            {[
+              { label: 'ONLEASH_WALLET_ID', value: createdId },
+              { label: 'AGENT_PRIVATE_KEY', value: createdPrivKey ?? '' },
+            ].map(({ label, value }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{ fontFamily: 'var(--font-code)', fontSize: 11, color: 'var(--ink-dim)', minWidth: 160 }}>{label}=</span>
+                <span style={{ fontFamily: 'var(--font-code)', fontSize: 11, color: 'var(--ink)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value.slice(0, 24)}…</span>
+                <button onClick={() => navigator.clipboard.writeText(value)}
+                  style={{ flexShrink: 0, background: 'none', border: '1px solid var(--mint)', color: 'var(--mint)', fontFamily: 'var(--font-ui)', fontSize: 10, padding: '3px 8px', cursor: 'pointer', letterSpacing: '0.1em' }}>COPY</button>
+              </div>
+            ))}
           </div>
         )}
 
