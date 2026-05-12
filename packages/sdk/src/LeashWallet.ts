@@ -150,6 +150,13 @@ export class LeashWallet {
             timestamp,
           };
         }
+
+        // Bridge DB approval → on-chain: agent keypair is the policy owner
+        await this.anchor.approveTransfer(
+          this.config.keypair,
+          anchorApprovalPda,
+          this.config.keypair.publicKey,
+        );
       }
 
       // ── EXECUTE ONCHAIN ────────────────────────────────────────────────────
