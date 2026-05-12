@@ -1,7 +1,8 @@
 import IDL from "../../../programs/target/idl/onleash.json" assert { type: "json" };
 import type { Onleash } from "./types/onleash";
 
-import { AnchorProvider, Program, BN, type Idl } from "@coral-xyz/anchor";
+import { AnchorProvider, Program, type Idl } from "@coral-xyz/anchor";
+import BN from "bn.js";
 import {
   Connection,
   PublicKey,
@@ -120,6 +121,11 @@ export class AnchorClient {
     this.program = new Program(IDL as unknown as Onleash, this.provider);
   }
 
+  async isPdaInitialized(pda: PublicKey): Promise<boolean> {
+    const info = await this.provider.connection.getAccountInfo(pda);
+    return info !== null;
+  }
+
   // ── PDA helpers ───────────────────────────────────────────────────────────
 
   policyPda(agentWallet: PublicKey): PublicKey {
@@ -150,13 +156,13 @@ export class AnchorClient {
 
     return this.program.methods
       .initializePolicy({
-        agent_wallet: params.agentWallet,
-        daily_cap: new BN(params.dailyCap.toString()),
-        per_vendor_cap: new BN(params.perVendorCap.toString()),
-        approval_threshold: new BN(params.approvalThreshold.toString()),
+        agentWallet: params.agentWallet,
+        dailyCap: new BN(params.dailyCap.toString()),
+        perVendorCap: new BN(params.perVendorCap.toString()),
+        approvalThreshold: new BN(params.approvalThreshold.toString()),
         blocklist: params.blocklist,
         allowlist: params.allowlist,
-        allowlist_mode: params.allowlistMode,
+        allowlistMode: params.allowlistMode,
       })
       .accounts({
         policy: policyPda,
@@ -178,10 +184,10 @@ export class AnchorClient {
 
     return this.program.methods
       .initializeChildPolicy({
-        agent_wallet: params.agentWallet,
-        daily_cap: new BN(params.dailyCap.toString()),
-        per_vendor_cap: new BN(params.perVendorCap.toString()),
-        approval_threshold: new BN(params.approvalThreshold.toString()),
+        agentWallet: params.agentWallet,
+        dailyCap: new BN(params.dailyCap.toString()),
+        perVendorCap: new BN(params.perVendorCap.toString()),
+        approvalThreshold: new BN(params.approvalThreshold.toString()),
       })
       .accounts({
         childPolicy: childPolicyPda,
@@ -329,12 +335,12 @@ export class AnchorClient {
 
     return this.program.methods
       .updatePolicy({
-        daily_cap: new BN(params.dailyCap.toString()),
-        per_vendor_cap: new BN(params.perVendorCap.toString()),
-        approval_threshold: new BN(params.approvalThreshold.toString()),
+        dailyCap: new BN(params.dailyCap.toString()),
+        perVendorCap: new BN(params.perVendorCap.toString()),
+        approvalThreshold: new BN(params.approvalThreshold.toString()),
         blocklist: params.blocklist,
         allowlist: params.allowlist,
-        allowlist_mode: params.allowlistMode,
+        allowlistMode: params.allowlistMode,
       })
       .accounts({
         policy: policyPda,

@@ -293,6 +293,24 @@ export class LeashWallet {
     this.policy = this.toPolicy(raw);
     this.engine = new PolicyEngine(this.policy);
     this.tracker = new SpendTracker(this.api, this.policy.timezone);
+    await this.ensurePolicyPda();
+  }
+
+  private async ensurePolicyPda(): Promise<void> {
+    const pda = this.anchor.policyPda(this.config.keypair.publicKey);
+    const initialized = await this.anchor.isPdaInitialized(pda);
+    if (initialized) return;
+
+    const policy = this.policy!;
+    await this.anchor.initializePolicy(this.config.keypair, {
+      agentWallet: this.config.keypair.publicKey,
+      dailyCap: policy.dailyCap,
+      perVendorCap: policy.perVendorCap,
+      approvalThreshold: policy.approvalThreshold,
+      blocklist: policy.blocklist.map((k) => new PublicKey(k)),
+      allowlist: policy.allowlist.map((k) => new PublicKey(k)),
+      allowlistMode: policy.allowlistMode,
+    });
   }
 
   private toPolicy(raw: ApiPolicyResponse): PolicyConfig {
