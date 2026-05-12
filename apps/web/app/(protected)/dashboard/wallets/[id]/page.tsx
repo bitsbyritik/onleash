@@ -1,271 +1,195 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import Topbar from '@/components/dashboard/Topbar';
-import { WALLETS, TRANSFERS } from '../../data';
 
-type Tab = 'overview' | 'transfers' | 'policy';
+interface WalletDetail {
+  id: string;
+  name: string;
+  publicKey: string;
+  network: string;
+  isActive: boolean;
+  createdAt: string;
+  policy: {
+    id: string;
+    dailyCap: string;
+    perVendorCap: string;
+    approvalThreshold: string;
+    blocklist: string[];
+    allowlist: string[];
+    allowlistMode: boolean;
+  } | null;
+}
 
-export default function WalletDetailPage({ params }: { params: { id: string } }) {
-  const [tab, setTab] = useState<Tab>('overview');
-  const w = WALLETS.find(x => x.id === params.id);
-  if (!w) return notFound();
+function EditPolicyModal({ wallet, onClose, onSaved }: { wallet: WalletDetail; onClose: () => void; onSaved: () => void }) {
+  const p = wallet.policy;
+  const [form, setForm] = useState({
+    dailyCap: p?.dailyCap ?? '500000000',
+    perVendorCap: p?.perVendorCap ?? '100000000',
+    approvalThreshold: p?.approvalThreshold ?? '200000000',
+    blocklist: p?.blocklist.join('\n') ?? '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const transfers = TRANSFERS.filter(t => t.wallet === w.name);
-  const pct = (w.spent / w.cap) * 100;
-  const hierarchyRole = w.hierarchy?.role ?? 'parent';
-  const childWallets = WALLETS.filter(x => x.hierarchy?.parentId === w.id);
-  const parentRemaining =
-    w.hierarchy?.parentDailyCap !== undefined && w.hierarchy?.parentSpendToday !== undefined
-      ? Math.max(0, w.hierarchy.parentDailyCap - w.hierarchy.parentSpendToday)
-      : undefined;
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/dashboard/wallets/${wallet.id}/policy`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dailyCap: form.dailyCap,
+          perVendorCap: form.perVendorCap,
+          approvalThreshold: form.approvalThreshold,
+          blocklist: form.blocklist.split('\n').map(s => s.trim()).filter(Boolean),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Failed'); return; }
+      onSaved();
+    } catch { setError('Network error'); }
+    finally { setLoading(false); }
+  }
 
-  const breadcrumb = (
-    <>
-      <Link href="/dashboard/wallets" style={{ color: 'var(--ink-faint)' }}>Wallets</Link>
-      {' '}<b>/ {w.name}</b>
-    </>
+  const field = (label: string, key: keyof typeof form, hint?: string) => (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--ink-dim)', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+      {hint && <div style={{ fontFamily: 'var(--font-ui)', fontSize: 10, color: 'var(--ink-faint)', marginBottom: 6 }}>{hint}</div>}
+      <input value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))} required
+        style={{ width: '100%', background: 'var(--void-3)', border: '1px solid var(--line-strong)', color: 'var(--ink)', fontFamily: 'var(--font-code)', fontSize: 12, padding: '9px 12px', outline: 'none', boxSizing: 'border-box' }} />
+    </div>
   );
 
   return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: 'var(--void-2)', border: '1px solid var(--line-strong)', padding: 32, width: '100%', maxWidth: 440, maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--mint)', textTransform: 'uppercase', marginBottom: 8 }}>Policy</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, textTransform: 'uppercase', color: 'var(--ink)', marginBottom: 24 }}>Edit Policy</div>
+        <form onSubmit={handleSubmit}>
+          {field('Daily Cap (lamports)', 'dailyCap', '500000000 = 0.5 SOL')}
+          {field('Per-Vendor Cap (lamports)', 'perVendorCap', '100000000 = 0.1 SOL')}
+          {field('Approval Threshold (lamports)', 'approvalThreshold', '200000000 = 0.2 SOL')}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--ink-dim)', textTransform: 'uppercase', marginBottom: 4 }}>Blocklist</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: 10, color: 'var(--ink-faint)', marginBottom: 6 }}>One address per line</div>
+            <textarea value={form.blocklist} onChange={e => setForm(p => ({ ...p, blocklist: e.target.value }))} rows={3}
+              style={{ width: '100%', background: 'var(--void-3)', border: '1px solid var(--line-strong)', color: 'var(--ink)', fontFamily: 'var(--font-code)', fontSize: 11, padding: '9px 12px', outline: 'none', boxSizing: 'border-box', resize: 'vertical' }} />
+          </div>
+          {error && <div style={{ border: '1px solid var(--danger)', background: 'var(--danger-soft)', padding: '9px 12px', fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--danger)', marginBottom: 16 }}>{error}</div>}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button type="submit" disabled={loading}
+              style={{ flex: 1, background: 'var(--mint)', color: 'var(--void)', border: 'none', fontFamily: 'var(--font-ui)', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', padding: '13px 20px', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>
+              {loading ? 'Saving…' : '→ Save Policy'}
+            </button>
+            <button type="button" onClick={onClose}
+              style={{ background: 'none', color: 'var(--ink-dim)', border: '1px solid var(--line-strong)', fontFamily: 'var(--font-ui)', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', padding: '13px 20px', cursor: 'pointer' }}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default function WalletDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const [wallet, setWallet] = useState<WalletDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showEdit, setShowEdit] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/dashboard/wallets/${id}`);
+      if (!res.ok) { setWallet(null); return; }
+      const data = await res.json();
+      setWallet(data.wallet ?? null);
+    } finally { setLoading(false); }
+  }, [id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const breadcrumb = (
+    <><Link href="/dashboard/wallets" style={{ color: 'var(--ink-faint)' }}>Wallets</Link> <b>/ {wallet?.name ?? '…'}</b></>
+  );
+
+  if (loading) return (
     <>
-      <Topbar title="Wallets" breadcrumb={breadcrumb} pendingCount={2} />
+      <Topbar title="Wallets" breadcrumb={breadcrumb} pendingCount={0} />
+      <div className="ds-content" style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-dim)', padding: '40px 0' }}>Loading…</div>
+    </>
+  );
+
+  if (!wallet) return (
+    <>
+      <Topbar title="Wallets" breadcrumb={breadcrumb} pendingCount={0} />
+      <div className="ds-content" style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--danger)', padding: '40px 0' }}>Wallet not found.</div>
+    </>
+  );
+
+  const p = wallet.policy;
+  const sol = (v: string) => (Number(BigInt(v)) / 1e9).toFixed(4);
+
+  return (
+    <>
+      <Topbar title="Wallets" breadcrumb={breadcrumb} pendingCount={0} />
+      {showEdit && <EditPolicyModal wallet={wallet} onClose={() => setShowEdit(false)} onSaved={() => { setShowEdit(false); load(); }} />}
+
       <div className="ds-content">
         <div className="ds-wd-head">
           <div>
-            <h1 className="ttl">{w.name}</h1>
-            <div className="pk">PK <b>{w.pk}</b></div>
+            <h1 className="ttl">{wallet.name}</h1>
+            <div className="pk">PK <b>{wallet.publicKey}</b></div>
             <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span className={`ds-bdg ${w.status}`}>{w.status}</span>
-              <span className={`ds-bdg ${hierarchyRole === 'child' ? 'pending' : 'active'}`}>
-                {hierarchyRole}
-              </span>
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--ink-faint)', letterSpacing: '0.12em' }}>
-                POLICY · {w.policy.toUpperCase()}
-              </span>
-              {w.created && (
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--ink-faint)', letterSpacing: '0.12em' }}>
-                  CREATED · {w.created}
-                </span>
-              )}
+              <span className={`ds-bdg ${wallet.isActive ? 'active' : 'blocked'}`}>{wallet.isActive ? 'active' : 'inactive'}</span>
+              <span className="ds-bdg active">{wallet.network}</span>
             </div>
           </div>
           <div className="actions">
-            <button className="ds-btn ds-btn-ghost">EDIT POLICY</button>
-            <button className="ds-btn ds-btn-warn">PAUSE WALLET</button>
+            <button className="ds-btn ds-btn-ghost" onClick={() => setShowEdit(true)}>EDIT POLICY</button>
           </div>
         </div>
 
-        <div className="ds-tabs">
-          {(['overview','transfers','policy'] as Tab[]).map(k => (
-            <button
-              key={k}
-              className={`ds-tab${tab === k ? ' active' : ''}`}
-              onClick={() => setTab(k)}
-            >
-              {k.charAt(0).toUpperCase() + k.slice(1)}
-              {k === 'transfers' && <span className="ct">{transfers.length}</span>}
-            </button>
-          ))}
-        </div>
-
-        {tab === 'overview' && (
-          <>
-            <div className="ds-gauge-big">
-              <div className="row">
-                <span>Today&apos;s spend · resets 00:00 UTC</span>
-                <span style={{ color: 'var(--warn)' }}>87% · approaching cap</span>
-              </div>
-              <div className="vrow">
-                <div className="left">${w.spent.toFixed(2)}</div>
-                <div className="right">of ${w.cap}.00 · ${(w.cap - w.spent).toFixed(2)} remaining</div>
-              </div>
-              <div className="tr"><div className="fl" style={{ width: pct + '%' }} /></div>
-              <div className="markers">
-                <span className="m" style={{ left: '60%' }}>60%</span>
-                <span className="m" style={{ left: '85%', color: 'var(--warn)' }}>85% AMBER</span>
-              </div>
+        {p ? (
+          <div className="ds-rules" style={{ marginTop: 24 }}>
+            <div className="ds-rule">
+              <div className="lbl">Daily Cap</div>
+              <div className="val mint">{sol(p.dailyCap)} SOL</div>
+              <div className="sub">{p.dailyCap} lamports · resets daily</div>
             </div>
-
-            <div className="ds-section-h">
-              <h2>Hierarchy</h2>
-              <span className="lbl">{hierarchyRole === 'child' ? 'child bounded by parent policy' : 'parent policy root'}</span>
+            <div className="ds-rule">
+              <div className="lbl">Per-Vendor Cap</div>
+              <div className="val mint">{sol(p.perVendorCap)} SOL</div>
+              <div className="sub">{p.perVendorCap} lamports · per address per day</div>
             </div>
-
-            {hierarchyRole === 'child' && w.hierarchy ? (
-              <div className="ds-hierarchy-grid">
-                <div className="ds-hierarchy-card">
-                  <div className="k">Wallet type</div>
-                  <div className="v warn">Child</div>
-                  <div className="sub">Spend is bounded by its own cap and the parent policy.</div>
-                </div>
-                <div className="ds-hierarchy-card">
-                  <div className="k">Parent wallet / policy</div>
-                  <div className="v">
-                    {w.hierarchy.parentId ? (
-                      <Link href={`/dashboard/wallets/${w.hierarchy.parentId}`}>{w.hierarchy.parentWallet}</Link>
-                    ) : (
-                      w.hierarchy.parentWallet
-                    )}
-                  </div>
-                  <div className="sub">{w.hierarchy.parentPolicy}</div>
-                </div>
-                <div className="ds-hierarchy-card">
-                  <div className="k">Child daily cap</div>
-                  <div className="v mint">${w.hierarchy.childDailyCap?.toLocaleString()}</div>
-                  <div className="sub">local cap for this child agent</div>
-                </div>
-                <div className="ds-hierarchy-card">
-                  <div className="k">Parent daily cap</div>
-                  <div className="v">${w.hierarchy.parentDailyCap?.toLocaleString()}</div>
-                  <div className="sub">
-                    {parentRemaining !== undefined
-                      ? `$${parentRemaining.toLocaleString()} parent budget remaining`
-                      : 'maximum shared budget across children'}
-                  </div>
-                </div>
-                <div className="ds-hierarchy-card">
-                  <div className="k">Child spend today</div>
-                  <div className="v warn">${w.hierarchy.childSpendToday?.toFixed(2)}</div>
-                  <div className="sub">resets 00:00 UTC with policy timezone</div>
-                </div>
-              </div>
-            ) : (
-              <div className="ds-hierarchy-grid">
-                <div className="ds-hierarchy-card">
-                  <div className="k">Wallet type</div>
-                  <div className="v mint">Parent</div>
-                  <div className="sub">Child wallets can inherit this wallet&apos;s budget envelope.</div>
-                </div>
-                <div className="ds-hierarchy-card">
-                  <div className="k">Parent daily cap</div>
-                  <div className="v">${(w.hierarchy?.parentDailyCap ?? w.cap).toLocaleString()}</div>
-                  <div className="sub">upper bound for child-agent budgets</div>
-                </div>
-                <div className="ds-hierarchy-card">
-                  <div className="k">Children</div>
-                  <div className="v">{childWallets.length}</div>
-                  <div className="sub">
-                    {childWallets.length > 0
-                      ? childWallets.map(child => child.name).join(', ')
-                      : 'No child wallets attached'}
-                  </div>
-                </div>
-                <div className="ds-hierarchy-card">
-                  <div className="k">Parent spend today</div>
-                  <div className="v warn">${(w.hierarchy?.parentSpendToday ?? w.spent).toLocaleString()}</div>
-                  <div className="sub">shared spend envelope consumed today</div>
-                </div>
-              </div>
-            )}
-
-            <div className="ds-section-h">
-              <h2>Recent activity</h2>
-              <span className="lbl">{transfers.length} transfers · last 24h</span>
+            <div className="ds-rule">
+              <div className="lbl">Approval Threshold</div>
+              <div className="val warn">{sol(p.approvalThreshold)} SOL</div>
+              <div className="sub">{p.approvalThreshold} lamports · triggers HITL</div>
             </div>
-            <div className="ds-panel">
-              <table className="ds-tt">
-                <thead>
-                  <tr><th>Time</th><th>To</th><th>Reason</th><th className="right">Amount</th><th className="right">Status</th></tr>
-                </thead>
-                <tbody>
-                  {transfers.map(t => (
-                    <tr key={t.id}>
-                      <td className="time">{t.time}</td>
-                      <td className="addr">{t.to.lbl} · {t.to.to.slice(0, 12)}…</td>
-                      <td style={{ color: 'var(--ink-faint)', fontSize: 11 }}>{t.reason || '—'}</td>
-                      <td className={`am${t.status === 'blocked' ? ' neg' : ''}`}>{t.amount.toFixed(2)} {t.token}</td>
-                      <td className="right"><span className={`ds-bdg ${t.status}`}>{t.status}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="ds-rule">
+              <div className="lbl">Blocklist</div>
+              <div className="val">{p.blocklist.length}</div>
+              <div className="sub">{p.blocklist.length > 0 ? p.blocklist.map(a => `${a.slice(0,6)}…`).join(', ') : 'No blocked addresses'}</div>
             </div>
-          </>
-        )}
-
-        {tab === 'transfers' && (
-          <div className="ds-panel">
-            <table className="ds-tt">
-              <thead>
-                <tr><th>Time</th><th>To</th><th>Reason</th><th className="right">Amount</th><th className="right">Status</th></tr>
-              </thead>
-              <tbody>
-                {transfers.map(t => (
-                  <tr key={t.id}>
-                    <td className="time">{t.time}</td>
-                    <td className="addr">{t.to.lbl} · {t.to.to.slice(0, 14)}…</td>
-                    <td style={{ color: 'var(--ink-faint)', fontSize: 11 }}>{t.reason || '—'}</td>
-                    <td className={`am${t.status === 'blocked' ? ' neg' : ''}`}>{t.amount.toFixed(2)} {t.token}</td>
-                    <td className="right"><span className={`ds-bdg ${t.status}`}>{t.status}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          </div>
+        ) : (
+          <div style={{ border: '1px dashed var(--line-strong)', padding: 32, textAlign: 'center', marginTop: 24 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--ink-dim)', marginBottom: 16 }}>No policy set yet.</div>
+            <button onClick={() => setShowEdit(true)} className="ds-btn ds-btn-mint">+ Set Policy</button>
           </div>
         )}
 
-        {tab === 'policy' && w.rules && (
-          <>
-            <div className="ds-rules">
-              <div className="ds-rule">
-                <div className="lbl">Max single transfer</div>
-                <div className="val mint">${w.rules.maxTx}</div>
-                <div className="sub">USDC equivalent · per call</div>
-              </div>
-              <div className="ds-rule">
-                <div className="lbl">Daily cap</div>
-                <div className="val mint">${w.rules.dailyCap}</div>
-                <div className="sub">resets 00:00 UTC</div>
-              </div>
-              <div className="ds-rule">
-                <div className="lbl">HITL threshold</div>
-                <div className="val warn">${w.rules.hitlAt}</div>
-                <div className="sub">routed to @OnLeashBot · 5:00 window</div>
-              </div>
-              <div className="ds-rule">
-                <div className="lbl">Allowed tokens</div>
-                <div className="chips">
-                  {w.rules.tokens.map(t => <span key={t} className="chip mint">{t}</span>)}
-                  <span className="chip">+ 4 more</span>
-                </div>
-                <div className="sub">7 of 1.2M whitelisted</div>
-              </div>
-              <div className="ds-rule">
-                <div className="lbl">Allowed hours</div>
-                <div className="val" style={{ fontSize: 24 }}>00:00–23:59</div>
-                <div className="sub">UTC · always-on</div>
-              </div>
-              <div className="ds-rule">
-                <div className="lbl">Blocklist</div>
-                <div className="chips">
-                  <span className="chip dan">4vLi…drainer</span>
-                  <span className="chip dan">pumpFunVault…</span>
-                  <span className="chip">+ 12</span>
-                </div>
-                <div className="sub">14 addresses · global + local</div>
-              </div>
-            </div>
-
-            <div className="ds-section-h"><h2>Version history</h2><span className="lbl">3 versions</span></div>
-            <div className="ds-panel">
-              {[
-                { v: 'v1.4.2', d: '2026-04-28', n: 'morgan tightened HITL to $50 (was $100)' },
-                { v: 'v1.4.1', d: '2026-04-12', n: 'added pumpFunVault to blocklist' },
-                { v: 'v1.4.0', d: '2026-03-30', n: 'initial deploy · pda 7gXq…4mJp' },
-              ].map((r, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '90px 110px 1fr 80px', gap: 16, padding: '14px 18px', borderBottom: '1px solid var(--line)', fontFamily: 'var(--font-ui)', fontSize: 12 }}>
-                  <span style={{ color: 'var(--mint)' }}>{r.v}</span>
-                  <span style={{ color: 'var(--ink-faint)' }}>{r.d}</span>
-                  <span style={{ color: 'var(--ink-dim)' }}>{r.n}</span>
-                  <span style={{ color: 'var(--ink-faint)', fontSize: 10, textAlign: 'right' }}>{i === 0 ? 'CURRENT' : 'ROLLBACK'}</span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+        <div style={{ marginTop: 24, fontFamily: 'var(--font-code)', fontSize: 11, color: 'var(--ink-faint)', border: '1px solid var(--line)', padding: '10px 14px' }}>
+          Wallet ID: <b style={{ color: 'var(--ink-dim)' }}>{wallet.id}</b>
+          <button onClick={() => navigator.clipboard.writeText(wallet.id)}
+            style={{ marginLeft: 12, background: 'none', border: '1px solid var(--line-strong)', color: 'var(--mint)', fontFamily: 'var(--font-ui)', fontSize: 10, padding: '3px 8px', cursor: 'pointer', letterSpacing: '0.1em' }}>COPY</button>
+        </div>
       </div>
     </>
   );

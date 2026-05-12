@@ -242,12 +242,22 @@ export default function WalletsPage() {
                 </span>
                 {w.policy && (
                   <div className="pol">
-                    <span className="cap">{(BigInt(w.policy.dailyCap) * 1000n / SOL).toString()}m SOL/day</span>
-                    <span className="pn">threshold: {(BigInt(w.policy.approvalThreshold) * 1000n / SOL).toString()}m SOL</span>
+                    <span className="cap">{(Number(BigInt(w.policy.dailyCap)) / 1e9).toFixed(3)} SOL/day</span>
+                    <span className="pn">threshold: {(Number(BigInt(w.policy.approvalThreshold)) / 1e9).toFixed(3)} SOL</span>
                   </div>
                 )}
-                <div style={{ fontFamily: 'var(--font-code)', fontSize: 10, color: 'var(--ink-faint)', marginTop: 4 }}>
-                  ID: {w.id}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                  <span style={{ fontFamily: 'var(--font-code)', fontSize: 10, color: 'var(--ink-faint)' }}>
+                    {w.id}
+                  </span>
+                  <button onClick={() => { navigator.clipboard.writeText(w.id); }}
+                    style={{ background: 'none', border: '1px solid var(--line-strong)', color: 'var(--ink-dim)', fontFamily: 'var(--font-ui)', fontSize: 10, padding: '2px 8px', cursor: 'pointer', letterSpacing: '0.1em' }}>
+                    COPY ID
+                  </button>
+                  <a href={`/dashboard/wallets/${w.id}`}
+                    style={{ background: 'none', border: '1px solid var(--mint)', color: 'var(--mint)', fontFamily: 'var(--font-ui)', fontSize: 10, padding: '2px 8px', cursor: 'pointer', letterSpacing: '0.1em', textDecoration: 'none' }}>
+                    EDIT POLICY →
+                  </a>
                 </div>
               </div>
             ))}
