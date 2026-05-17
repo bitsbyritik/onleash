@@ -576,6 +576,9 @@
 .ds-bdg.pending  { color: var(--warn);   background: var(--warn-soft); }
 .ds-bdg.blocked  { color: var(--danger); background: var(--danger-soft); }
 .ds-bdg.rejected { color: var(--ink-faint); background: rgba(74,81,96,0.1); }
+.ds-bdg.mainnet  { color: var(--mint);      background: var(--mint-soft); }
+.ds-bdg.devnet   { color: var(--warn);      background: var(--warn-soft); }
+.ds-bdg.testnet  { color: var(--ink-faint); background: rgba(74,81,96,0.1); }
 
 /* ── SPEND BARS ───────────────────────────────────────────────── */
 .ds-spendbars { padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }

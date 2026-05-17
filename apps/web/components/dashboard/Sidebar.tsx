@@ -8,11 +8,11 @@ import Icon from './Icon';
 type DashboardNetwork = 'mainnet' | 'devnet' | 'testnet';
 
 const NAV_ITEMS = [
-  { id: 'overview',  label: 'Overview',  href: '/dashboard',           icon: 'overview' },
-  { id: 'wallets',   label: 'Wallets',   href: '/dashboard/wallets',   icon: 'wallets' },
-  { id: 'transfers', label: 'Transfers', href: '/dashboard/transfers', icon: 'transfers' },
-  { id: 'approvals', label: 'Approvals', href: '/dashboard/approvals', icon: 'approvals' },
-  { id: 'settings',  label: 'Settings',  href: '/dashboard/settings',  icon: 'settings' },
+  { id: 'overview',  label: 'Overview',  href: '/dashboard',  icon: 'overview' },
+  { id: 'wallets',   label: 'Wallets',   href: '/wallets',    icon: 'wallets' },
+  { id: 'transfers', label: 'Transfers', href: '/transfers',  icon: 'transfers' },
+  { id: 'approvals', label: 'Approvals', href: '/approvals',  icon: 'approvals' },
+  { id: 'settings',  label: 'Settings',  href: '/settings',   icon: 'settings' },
 ];
 
 interface SidebarProps {
