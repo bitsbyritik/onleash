@@ -133,8 +133,11 @@ export const users = pgTable("users", {
   teamId: uuid("team_id")
     .references(() => teams.id, { onDelete: "cascade" })
     .notNull(),
-  walletAddress: text("wallet_address").unique().notNull(),
+  walletAddress: text("wallet_address").unique(),
+  reownUserId: text("reown_user_id").unique(),
   email: text("email"),
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  avatarUrl: text("avatar_url"),
   name: text("name"),
   role: userRoleEnum("role").default("member").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -445,7 +448,7 @@ export const auditLog = pgTable(
     actorId: uuid("actor_id").references(() => users.id, {
       onDelete: "set null",
     }),
-    actorClerkId: text("actor_clerk_id"),
+    actorReownId: text("actor_reown_id"),
     action: auditActionEnum("action").notNull(),
     resourceType: auditResourceTypeEnum("resource_type").notNull(),
     resourceId: uuid("resource_id").notNull(),
