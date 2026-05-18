@@ -120,14 +120,14 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
 
   if (loading) return (
     <>
-      <Topbar title="Wallets" breadcrumb={breadcrumb} pendingCount={0} />
+      <Topbar title="Wallets" breadcrumb={breadcrumb} />
       <div className="ds-content" style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-dim)', padding: '40px 0' }}>Loading…</div>
     </>
   );
 
   if (!wallet) return (
     <>
-      <Topbar title="Wallets" breadcrumb={breadcrumb} pendingCount={0} />
+      <Topbar title="Wallets" breadcrumb={breadcrumb} />
       <div className="ds-content" style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--danger)', padding: '40px 0' }}>Wallet not found.</div>
     </>
   );
@@ -137,7 +137,7 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <Topbar title="Wallets" breadcrumb={breadcrumb} pendingCount={0} />
+      <Topbar title="Wallets" breadcrumb={breadcrumb} />
       {showEdit && <EditPolicyModal wallet={wallet} onClose={() => setShowEdit(false)} onSaved={() => { setShowEdit(false); load(); }} />}
 
       <div className="ds-content">

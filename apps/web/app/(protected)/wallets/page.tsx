@@ -40,7 +40,7 @@ export default function WalletsPage() {
 
   return (
     <>
-      <Topbar title="Wallets" pendingCount={0} />
+      <Topbar title="Wallets" />
       {showModal && (
         <AddWalletModal
           onClose={() => setShowModal(false)}

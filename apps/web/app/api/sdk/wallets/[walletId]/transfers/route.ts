@@ -46,6 +46,7 @@ export async function POST(
         teamId: auth.teamId,
         policyId,
         policyVersion,
+        network: wallet.network,
         fromAddress,
         toAddress,
         amount: BigInt(amount),

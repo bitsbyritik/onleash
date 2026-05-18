@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
-import { db, eq } from "@repo/db";
-import { teams } from "@repo/db/schema";
+import { db, eq, and, count } from "@repo/db";
+import { agentWallets, approvals, teams, transfers } from "@repo/db/schema";
 import { getDashboardSession, unauthorized } from "../_lib/session";
 
 const DEV_PLAN_COOKIE = "onleash_dev_plan";
@@ -15,9 +15,22 @@ export async function GET() {
   const session = await getDashboardSession();
   if (!session) return unauthorized();
 
-  const team = await db.query.teams.findFirst({
-    where: eq(teams.id, session.teamId),
-  });
+  const [team, pendingResult] = await Promise.all([
+    db.query.teams.findFirst({ where: eq(teams.id, session.teamId) }),
+    db
+      .select({ value: count() })
+      .from(approvals)
+      .innerJoin(transfers, eq(approvals.transferId, transfers.id))
+      .innerJoin(agentWallets, eq(transfers.walletId, agentWallets.id))
+      .where(
+        and(
+          eq(agentWallets.teamId, session.teamId),
+          eq(approvals.status, "pending"),
+        ),
+      ),
+  ]);
+
+  const pendingApprovals = pendingResult[0]?.value ?? 0;
 
   const isDev = process.env.NODE_ENV === "development";
   let devPlan: Plan | null = null;
@@ -48,6 +61,7 @@ export async function GET() {
           walletLimit: team.walletLimit,
         }
       : null,
+    pendingApprovals,
     ...(isDev && {
       devMode: true,
       devPlan,

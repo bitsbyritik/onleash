@@ -45,7 +45,7 @@ export async function GET() {
 
   const todayStr = new Date().toISOString().split("T")[0]!;
 
-  // Run all heavy queries in parallel
+  // Run all heavy queries in parallel — filter by transfers.network directly
   const [
     totalResult,
     blockedResult,
@@ -53,24 +53,30 @@ export async function GET() {
     spendRows,
     recentRows,
   ] = await Promise.all([
-    // total transfers
-    db.select({ value: count() }).from(transfers).where(inArray(transfers.walletId, walletIds)),
-    // blocked transfers
+    // total transfers on this network
     db.select({ value: count() }).from(transfers).where(
-      and(inArray(transfers.walletId, walletIds), eq(transfers.status, "blocked")),
+      and(inArray(transfers.walletId, walletIds), eq(transfers.network, network)),
     ),
-    // pending approvals (join through transfers to scope by network)
+    // blocked transfers on this network
+    db.select({ value: count() }).from(transfers).where(
+      and(inArray(transfers.walletId, walletIds), eq(transfers.network, network), eq(transfers.status, "blocked")),
+    ),
+    // pending approvals scoped to this network
     db.select({ value: count() })
       .from(approvals)
       .innerJoin(transfers, eq(approvals.transferId, transfers.id))
-      .where(and(eq(approvals.status, "pending"), inArray(transfers.walletId, walletIds))),
+      .where(and(
+        eq(approvals.status, "pending"),
+        inArray(transfers.walletId, walletIds),
+        eq(transfers.network, network),
+      )),
     // today's spend per wallet
     db.query.spendTracking.findMany({
       where: and(inArray(spendTracking.walletId, walletIds), eq(spendTracking.date, todayStr)),
     }),
-    // recent transfers (last 8)
+    // recent transfers (last 8) on this network
     db.query.transfers.findMany({
-      where: inArray(transfers.walletId, walletIds),
+      where: and(inArray(transfers.walletId, walletIds), eq(transfers.network, network)),
       orderBy: [desc(transfers.createdAt)],
       limit: 8,
       with: { wallet: { columns: { name: true } } },

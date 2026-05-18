@@ -7,6 +7,7 @@ import {
 } from "next/font/google";
 import "../global.css";
 import SolanaWalletProvider from "@/components/WalletProvider";
+import ReownProvider from "@/components/ReownProvider";
 
 const bebasNeue = Bebas_Neue({
   weight: "400",
@@ -46,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body
         className={`${bebasNeue.variable} ${dmMono.variable} ${instrumentSerif.variable} ${firaCode.variable}`}
       >
@@ -54,9 +55,11 @@ export default function RootLayout({
         <div className="bg-vignette" aria-hidden="true" />
         <div className="bg-scanlines" aria-hidden="true" />
         <div className="bg-noise" aria-hidden="true" />
-        <SolanaWalletProvider>
-          {children}
-        </SolanaWalletProvider>
+        <ReownProvider>
+          <SolanaWalletProvider>
+            {children}
+          </SolanaWalletProvider>
+        </ReownProvider>
       </body>
     </html>
   );

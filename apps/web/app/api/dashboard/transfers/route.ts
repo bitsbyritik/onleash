@@ -29,7 +29,7 @@ export async function GET() {
   }
 
   const rows = await db.query.transfers.findMany({
-    where: inArray(transfers.walletId, walletIds),
+    where: and(inArray(transfers.walletId, walletIds), eq(transfers.network, network)),
     orderBy: [desc(transfers.createdAt)],
     limit: 200,
     with: {

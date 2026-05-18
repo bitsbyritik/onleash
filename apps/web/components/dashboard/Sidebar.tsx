@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { modal } from '@/config/reown';
 import Icon from './Icon';
 
 type DashboardNetwork = 'mainnet' | 'devnet' | 'testnet';
@@ -45,6 +46,7 @@ export default function Sidebar({
   }, []);
 
   async function logout() {
+    await modal.disconnect();
     await fetch('/api/dashboard/logout', { method: 'POST' });
     window.location.href = '/sign-in';
   }

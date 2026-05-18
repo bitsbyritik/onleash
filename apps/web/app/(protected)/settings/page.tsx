@@ -221,7 +221,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <Topbar title="Settings" pendingCount={2} hideCta />
+      <Topbar title="Settings"  hideCta />
       <div className="ds-content">
         {error && (
           <div className="ds-alert ds-alert-danger" role="alert">

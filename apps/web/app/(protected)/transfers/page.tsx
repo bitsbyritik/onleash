@@ -124,7 +124,7 @@ export default function TransfersPage() {
 
   return (
     <>
-      <Topbar title="Transfers" pendingCount={0} />
+      <Topbar title="Transfers" />
       <div className="ds-content">
         <div className="ds-filters">
           {FILTERS.map((f) => (
