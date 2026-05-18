@@ -292,6 +292,7 @@ export const transfers = pgTable(
       onDelete: "set null",
     }),
     policyVersion: integer("policy_version"),
+    network: networkEnum("network").notNull(),
     fromAddress: text("from_address").notNull(),
     toAddress: text("to_address").notNull(),
     amount: bigint("amount", { mode: "bigint" }).notNull(),

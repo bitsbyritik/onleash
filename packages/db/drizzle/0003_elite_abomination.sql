@@ -1,0 +1,1 @@
+ALTER TABLE "transfers" ADD COLUMN "network" "network" DEFAULT 'devnet' NOT NULL;
