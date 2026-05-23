@@ -1,8 +1,28 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+
+interface Me {
+  walletAddress?: string;
+  email?: string;
+  name?: string;
+}
 
 export default function Nav() {
+  const [me, setMe] = useState<Me | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { user?: Me } | null) => {
+        if (data?.user) setMe(data.user);
+      })
+      .catch(() => null);
+  }, []);
+
+  const label = me?.name ?? me?.email ?? (me?.walletAddress ? `${me.walletAddress.slice(0, 6)}…${me.walletAddress.slice(-4)}` : null);
+
   return (
     <nav className="nav">
       <div className="nav-inner">
@@ -26,9 +46,20 @@ export default function Nav() {
           <a href="#hitl">HITL</a>
         </div>
 
-        <Link href="/sign-up" className="nav-cta">
-          Get Started &nbsp;<span className="cta-arr">→</span>
-        </Link>
+        {label ? (
+          <Link
+            href="/dashboard"
+            className="nav-cta"
+            style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+          >
+            <span style={{ width: 6, height: 6, background: 'var(--mint)', borderRadius: '50%', boxShadow: '0 0 6px var(--mint)' }} />
+            {label}
+          </Link>
+        ) : (
+          <Link href="/sign-in" className="nav-cta">
+            Get Started &nbsp;<span className="cta-arr">→</span>
+          </Link>
+        )}
       </div>
     </nav>
   );

@@ -1,51 +1,89 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { useState, useEffect, useRef } from 'react';
+import { useAppKitAccount, useAppKitProvider, useAppKit } from '@reown/appkit/react';
+import type { Provider } from '@reown/appkit-adapter-solana';
 import { useRouter } from 'next/navigation';
 import bs58 from 'bs58';
 
-type Step = 'idle' | 'connected' | 'signing' | 'authenticating' | 'error';
+type AuthStep = 'idle' | 'signing' | 'authenticating' | 'error';
 
 export default function SignInPage() {
-  const { connected, publicKey, signMessage, disconnect } = useWallet();
-  const { setVisible } = useWalletModal();
+  const { address, isConnected, embeddedWalletInfo } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider<Provider>('solana');
+  const { open } = useAppKit();
   const router = useRouter();
-  const [step, setStep] = useState<Step>('idle');
+
+  const [step, setStep] = useState<AuthStep>('idle');
   const [error, setError] = useState('');
+  // Prevent double-fire in React StrictMode (effects run twice in dev)
+  const authFired = useRef(false);
 
   useEffect(() => {
-    if (connected && publicKey && step === 'idle') {
-      setStep('connected');
+    if (isConnected && address && !authFired.current) {
+      authFired.current = true;
+      void handleAuth();
     }
-    if (!connected && step === 'connected') {
+    if (!isConnected) {
+      authFired.current = false;
       setStep('idle');
+      setError('');
     }
-  }, [connected, publicKey, step]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, address]);
 
   async function handleAuth() {
-    if (!publicKey || !signMessage) return;
+    if (embeddedWalletInfo) {
+      await handleSocialAuth();
+    } else {
+      await handleWalletAuth();
+    }
+  }
+
+  async function handleSocialAuth() {
+    setStep('authenticating');
+    setError('');
+    const user = embeddedWalletInfo?.user;
+    try {
+      const res = await fetch('/api/auth/social-signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address,
+          email: user?.email,
+          name: user?.username,
+        }),
+      });
+      if (!res.ok) throw new Error('Social sign-in failed');
+      router.push('/dashboard');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Sign in failed');
+      setStep('error');
+    }
+  }
+
+  async function handleWalletAuth() {
+    if (!address || !walletProvider) return;
     setStep('signing');
     setError('');
     try {
       const nonceRes = await fetch('/api/auth/nonce', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress: publicKey.toBase58() }),
+        body: JSON.stringify({ walletAddress: address }),
       });
       if (!nonceRes.ok) throw new Error('Failed to get nonce');
-      const { nonce, message } = await nonceRes.json();
+      const { nonce, message } = await nonceRes.json() as { nonce: string; message: string };
 
       const msgBytes = new TextEncoder().encode(message);
-      const sigBytes = await signMessage(msgBytes);
+      const sigBytes = await walletProvider.signMessage(msgBytes);
       const signature = bs58.encode(sigBytes);
 
       setStep('authenticating');
       const authRes = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress: publicKey.toBase58(), signature, nonce }),
+        body: JSON.stringify({ walletAddress: address, signature, nonce }),
       });
       if (!authRes.ok) throw new Error('Authentication failed');
       router.push('/dashboard');
@@ -55,122 +93,163 @@ export default function SignInPage() {
     }
   }
 
-  const shortAddr = publicKey
-    ? `${publicKey.toBase58().slice(0, 6)}…${publicKey.toBase58().slice(-4)}`
-    : '';
+  const shortAddr = address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '';
+  const isLoading = step === 'signing' || step === 'authenticating';
 
   return (
-    <div className="auth-page" style={{ background: 'var(--void)', minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 0, position: 'relative', zIndex: 10 }}>
-      <div style={{ width: '100%', maxWidth: 420, padding: '0 20px' }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <span style={{ width: 26, height: 26, border: '1px solid var(--mint)', display: 'grid', placeItems: 'center', position: 'relative' }}>
-              <span style={{ width: 9, height: 9, background: 'var(--mint)', boxShadow: '0 0 10px var(--mint)', display: 'block' }} />
-            </span>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink)' }}>
-              On<b style={{ color: 'var(--mint)', fontWeight: 500 }}>Leash</b>
-            </span>
+    <>
+      <style>{`
+        @keyframes si-spin { to { transform: rotate(360deg); } }
+        @keyframes si-pulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.4; }
+        }
+        @keyframes brandPulse {
+          0%   { transform: scale(1);   opacity: 0.7; }
+          100% { transform: scale(1.9); opacity: 0; }
+        }
+      `}</style>
+
+      <div style={{
+        minHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        zIndex: 10,
+        gap: 32,
+      }}>
+
+        {/* Brand */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <div style={{ position: 'relative', width: 26, height: 26 }}>
+            <div style={{
+              position: 'absolute', inset: 0,
+              border: '1px solid var(--mint)',
+              display: 'grid', placeItems: 'center',
+            }}>
+              <div style={{ width: 8, height: 8, background: 'var(--mint)', boxShadow: '0 0 10px var(--mint)' }} />
+            </div>
+            <div style={{
+              position: 'absolute', inset: -6,
+              border: '1px solid var(--mint)',
+              opacity: 0,
+              animation: 'brandPulse 2.4s ease-out infinite',
+            }} />
           </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: 10, letterSpacing: '0.22em', color: 'var(--ink-faint)', textTransform: 'uppercase' }}>
-            Spend Control for AI Agents
+
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 32,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              lineHeight: 1,
+            }}>
+              <span style={{ color: 'var(--ink-dim)' }}>On</span>
+              <span style={{ color: 'var(--mint)' }}>Leash</span>
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: 10,
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-faint)',
+              marginTop: 6,
+            }}>
+              Spend Control for AI Agents
+            </div>
           </div>
         </div>
 
-        {/* Card */}
-        <div style={{ border: '1px solid var(--line-strong)', background: 'var(--void-2)', padding: '32px 32px 28px' }}>
-          {/* Header */}
-          <div style={{ marginBottom: 28 }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--mint)', marginBottom: 8 }}>
-              Authentication
-            </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 1, letterSpacing: '0.01em', textTransform: 'uppercase', color: 'var(--ink)' }}>
-              {step === 'idle' || step === 'error' ? 'Connect Wallet' : step === 'connected' ? 'Ready to sign' : step === 'signing' ? 'Check wallet' : 'Verifying…'}
-            </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--ink-dim)', marginTop: 10, lineHeight: 1.6, letterSpacing: '0.03em' }}>
-              {step === 'idle' || step === 'error'
-                ? 'Your Solana wallet is your identity. No email, no password.'
-                : step === 'connected'
-                ? `Connected: ${shortAddr} — sign a message to authenticate.`
-                : step === 'signing'
-                ? 'Sign the message in your wallet to continue.'
-                : 'Verifying signature on-chain…'}
-            </div>
-          </div>
-
-          {/* Wallet address display */}
-          {(step === 'connected' || step === 'signing' || step === 'authenticating') && (
-            <div style={{ border: '1px solid var(--line-strong)', background: 'var(--void-3)', padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 7, height: 7, background: 'var(--mint)', borderRadius: '50%', boxShadow: '0 0 8px var(--mint)', flexShrink: 0, animation: 'ds-livePulse 1.6s ease-in-out infinite' }} />
-              <span style={{ fontFamily: 'var(--font-code)', fontSize: 12, color: 'var(--ink)', letterSpacing: '0.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {publicKey?.toBase58()}
+        {/* Auth status — shown after wallet connects */}
+        {isConnected && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 12,
+            padding: '20px 28px',
+            border: '1px solid var(--line-strong)',
+            background: 'var(--void-2)',
+            minWidth: 280,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {isLoading ? (
+                <span style={{
+                  width: 7, height: 7, flexShrink: 0,
+                  border: '1px solid var(--mint)', borderTopColor: 'transparent',
+                  borderRadius: '50%', display: 'inline-block',
+                  animation: 'si-spin 0.8s linear infinite',
+                }} />
+              ) : step === 'error' ? (
+                <span style={{ width: 7, height: 7, background: 'var(--danger)', borderRadius: '50%', flexShrink: 0 }} />
+              ) : (
+                <span style={{ width: 7, height: 7, background: 'var(--mint)', borderRadius: '50%', boxShadow: '0 0 8px var(--mint)', flexShrink: 0 }} />
+              )}
+              <span style={{ fontFamily: 'var(--font-code)', fontSize: 12, color: 'var(--ink-dim)', letterSpacing: '0.04em' }}>
+                {shortAddr}
               </span>
             </div>
-          )}
 
-          {/* Error */}
-          {step === 'error' && error && (
-            <div style={{ border: '1px solid var(--danger)', background: 'var(--danger-soft)', padding: '10px 14px', marginBottom: 20, fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--danger)', letterSpacing: '0.05em' }}>
-              {error}
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontSize: 11,
+              letterSpacing: '0.15em', textTransform: 'uppercase',
+              color: step === 'error' ? 'var(--danger)' : 'var(--ink-dim)',
+              animation: isLoading ? 'si-pulse 1.4s ease-in-out infinite' : 'none',
+            }}>
+              {step === 'signing' && 'Check your wallet…'}
+              {step === 'authenticating' && 'Verifying…'}
+              {step === 'error' && (error || 'Auth failed')}
             </div>
-          )}
 
-          {/* Actions */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {(step === 'idle' || step === 'error') && (
+            {step === 'error' && (
               <button
-                onClick={() => setVisible(true)}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontFamily: 'var(--font-ui)', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', padding: '14px 20px', background: 'var(--mint)', color: 'var(--void)', border: '1px solid var(--mint)', cursor: 'pointer', transition: 'box-shadow 0.15s ease' }}
-                onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 28px var(--mint-glow)')}
-                onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+                onClick={() => void handleAuth()}
+                style={{
+                  background: 'none', border: '1px solid var(--line-strong)',
+                  color: 'var(--ink-dim)', fontFamily: 'var(--font-ui)',
+                  fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase',
+                  padding: '7px 16px', cursor: 'pointer',
+                }}
               >
-                <span style={{ fontSize: 16 }}>◈</span> Connect Wallet
+                ↺ Retry
               </button>
             )}
-
-            {step === 'connected' && (
-              <>
-                <button
-                  onClick={handleAuth}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontFamily: 'var(--font-ui)', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', padding: '14px 20px', background: 'var(--mint)', color: 'var(--void)', border: '1px solid var(--mint)', cursor: 'pointer', transition: 'box-shadow 0.15s ease' }}
-                  onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 28px var(--mint-glow)')}
-                  onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
-                >
-                  → Sign &amp; Authenticate
-                </button>
-                <button
-                  onClick={() => { disconnect(); setStep('idle'); }}
-                  style={{ width: '100%', fontFamily: 'var(--font-ui)', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', padding: '11px 20px', background: 'none', color: 'var(--ink-dim)', border: '1px solid var(--line-strong)', cursor: 'pointer' }}
-                >
-                  ↺ Disconnect
-                </button>
-              </>
-            )}
-
-            {(step === 'signing' || step === 'authenticating') && (
-              <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontFamily: 'var(--font-ui)', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', padding: '14px 20px', background: 'var(--void-3)', color: 'var(--ink-dim)', border: '1px solid var(--line-strong)' }}>
-                <span style={{ display: 'inline-block', width: 8, height: 8, border: '1px solid var(--mint)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                {step === 'signing' ? 'Waiting for signature…' : 'Verifying…'}
-              </div>
-            )}
           </div>
-        </div>
+        )}
 
-        {/* Footer note */}
-        <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {[
-            '✓  Wallet address = your login · first time creates your account',
-            '✓  Signature is off-chain · no gas, no transaction',
-            '✓  Session lasts 7 days',
-          ].map(line => (
-            <div key={line} style={{ fontFamily: 'var(--font-ui)', fontSize: 10, color: 'var(--ink-faint)', letterSpacing: '0.1em' }}>{line}</div>
-          ))}
+        {/* Connect button — only shown when not yet connected */}
+        {!isConnected && (
+          <button
+            onClick={() => open({ view: 'Connect' })}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              fontFamily: 'var(--font-ui)', fontSize: 12,
+              letterSpacing: '0.18em', textTransform: 'uppercase',
+              padding: '14px 32px',
+              background: 'var(--mint)', color: 'var(--void)',
+              border: 'none', cursor: 'pointer',
+              transition: 'box-shadow 0.15s ease',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 32px var(--mint-glow)')}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+          >
+            <span style={{ fontSize: 16 }}>◈</span> Connect to access
+          </button>
+        )}
+
+        {/* Footer */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+          <p style={{ fontFamily: 'var(--font-ui)', fontSize: 10, color: 'var(--ink-faint)', letterSpacing: '0.08em' }}>
+            Wallet · Email · Social — secured by Reown AppKit
+          </p>
+          <p style={{ fontFamily: 'var(--font-ui)', fontSize: 10, color: 'var(--ink-faint)', letterSpacing: '0.08em' }}>
+            First connection creates your account · 7-day session
+          </p>
         </div>
       </div>
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
-    </div>
+    </>
   );
 }

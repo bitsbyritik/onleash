@@ -115,19 +115,19 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
   useEffect(() => { load(); }, [load]);
 
   const breadcrumb = (
-    <><Link href="/dashboard/wallets" style={{ color: 'var(--ink-faint)' }}>Wallets</Link> <b>/ {wallet?.name ?? '…'}</b></>
+    <><Link href="/wallets" style={{ color: 'var(--ink-faint)' }}>Wallets</Link> <b>/ {wallet?.name ?? '…'}</b></>
   );
 
   if (loading) return (
     <>
-      <Topbar title="Wallets" breadcrumb={breadcrumb} pendingCount={0} />
+      <Topbar title="Wallets" breadcrumb={breadcrumb} />
       <div className="ds-content" style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-dim)', padding: '40px 0' }}>Loading…</div>
     </>
   );
 
   if (!wallet) return (
     <>
-      <Topbar title="Wallets" breadcrumb={breadcrumb} pendingCount={0} />
+      <Topbar title="Wallets" breadcrumb={breadcrumb} />
       <div className="ds-content" style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--danger)', padding: '40px 0' }}>Wallet not found.</div>
     </>
   );
@@ -137,7 +137,7 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <Topbar title="Wallets" breadcrumb={breadcrumb} pendingCount={0} />
+      <Topbar title="Wallets" breadcrumb={breadcrumb} />
       {showEdit && <EditPolicyModal wallet={wallet} onClose={() => setShowEdit(false)} onSaved={() => { setShowEdit(false); load(); }} />}
 
       <div className="ds-content">
@@ -147,7 +147,7 @@ export default function WalletDetailPage({ params }: { params: Promise<{ id: str
             <div className="pk">PK <b>{wallet.publicKey}</b></div>
             <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
               <span className={`ds-bdg ${wallet.isActive ? 'active' : 'blocked'}`}>{wallet.isActive ? 'active' : 'inactive'}</span>
-              <span className="ds-bdg active">{wallet.network}</span>
+              <span className={`ds-bdg ${wallet.network}`}>{wallet.network}</span>
             </div>
           </div>
           <div className="actions">

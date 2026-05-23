@@ -29,6 +29,9 @@ type MeResponse = {
     plan: string;
     walletLimit: number;
   } | null;
+  devMode?: boolean;
+  devPlan?: string | null;
+  devPlanOptions?: string[];
 };
 
 function shortAddress(address: string) {
@@ -202,6 +205,15 @@ export default function SettingsPage() {
     window.setTimeout(() => setCopied(false), 1600);
   }
 
+  async function switchDevPlan(plan: string) {
+    await fetch('/api/dashboard/dev/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan }),
+    });
+    await loadSettings();
+  }
+
   async function logout() {
     await fetch('/api/dashboard/logout', { method: 'POST' });
     window.location.href = '/sign-in';
@@ -209,7 +221,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <Topbar title="Settings" pendingCount={2} hideCta />
+      <Topbar title="Settings"  hideCta />
       <div className="ds-content">
         {error && (
           <div className="ds-alert ds-alert-danger" role="alert">
@@ -383,6 +395,34 @@ export default function SettingsPage() {
           </div>
 
           <div>
+            {me?.devMode && (
+              <div className="ds-set-card" style={{ marginBottom: 16, borderColor: 'var(--amber, #f59e0b)' }}>
+                <div className="h" style={{ color: 'var(--amber, #f59e0b)' }}>
+                  Dev plan override
+                  <span className="desc">Not persisted — session cookie only</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                  {(me.devPlanOptions ?? ['free', 'pro', 'team']).map((p) => {
+                    const active = (me.devPlan ?? me.team?.plan) === p;
+                    return (
+                      <button
+                        key={p}
+                        className={`ds-btn ${active ? 'ds-btn-mint' : 'ds-btn-ghost'}`}
+                        type="button"
+                        onClick={() => void switchDevPlan(p)}
+                        style={{ opacity: active ? 1 : 0.6 }}
+                      >
+                        {p.toUpperCase()}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p style={{ fontFamily: 'var(--font-ui)', fontSize: 10, color: 'var(--ink-faint)', marginTop: 8 }}>
+                  DEV_PLAN env: {process.env.NEXT_PUBLIC_DEV_PLAN ?? '(server-side only)'}
+                </p>
+              </div>
+            )}
+
             <div className="ds-plan-card">
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: 10, letterSpacing: '0.22em', color: 'var(--mint)', textTransform: 'uppercase' }}>Current plan</div>
               <div className="pl">{me?.team?.plan?.toUpperCase() ?? 'FREE'}</div>
